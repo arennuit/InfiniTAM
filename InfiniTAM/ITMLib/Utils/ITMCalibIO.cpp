@@ -22,13 +22,13 @@ bool ITMLib::Objects::readIntrinsics(std::istream & src, ITMIntrinsics & dest)
 
     // Display.
     std::cout << "------------------------------------------------------------------------" << std::endl;
-    std::cout << "Objects::readIntrinsics() : ";
-    std::cout << "sizeX : " << sizeX;
-    std::cout << "sizeY : " << sizeY;
-    std::cout << "focalLength[0] : " << focalLength[0];
-    std::cout << "focalLength[1] : " << focalLength[1];
-    std::cout << "centerPoint[0] : " << centerPoint[0];
-    std::cout << "centerPoint[1] : " << centerPoint[1];
+    std::cout << "Objects::readIntrinsics() : " << std::endl;;
+    std::cout << "sizeX : " << sizeX << std::endl;;
+    std::cout << "sizeY : " << sizeY << std::endl;;
+    std::cout << "focalLength[0] : " << focalLength[0] << std::endl;;
+    std::cout << "focalLength[1] : " << focalLength[1] << std::endl;;
+    std::cout << "centerPoint[0] : " << centerPoint[0] << std::endl;;
+    std::cout << "centerPoint[1] : " << centerPoint[1] << std::endl;;
 
 	return true;
 }
@@ -52,9 +52,9 @@ bool ITMLib::Objects::readExtrinsics(std::istream & src, ITMExtrinsics & dest)
 
     // Display.
     std::cout << "------------------------------------------------------------------------" << std::endl;
-    std::cout << "Objects::readExtrinsics() : ";
+    std::cout << "Objects::readExtrinsics() : " << std::endl;;
     std::cout << "calib : " << std::endl;
-    std::cout << calib;
+    std::cout << calib << std::endl;;
 
 	return true;
 }
@@ -104,7 +104,7 @@ bool ITMLib::Objects::readDisparityCalib(std::istream & src, ITMDisparityCalib &
 
     // Display.
     std::cout << "------------------------------------------------------------------------" << std::endl;
-    std::cout << "Objects::readDisparityCalib() : ";
+    std::cout << "Objects::readDisparityCalib() : " << std::endl;;
     std::cout << "   a: " << a << std::endl;
     std::cout << "   b: " << b << std::endl;
 
