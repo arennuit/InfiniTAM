@@ -15,9 +15,21 @@ bool ITMLib::Objects::readIntrinsics(std::istream & src, ITMIntrinsics & dest)
 	src >> sizeX >> sizeY;
 	src >> focalLength[0] >> focalLength[1];
 	src >> centerPoint[0] >> centerPoint[1];
+
 	if (src.fail()) return false;
 
 	dest.SetFrom(focalLength[0], focalLength[1], centerPoint[0], centerPoint[1], sizeX, sizeY);
+
+    // Display.
+    std::cout << "------------------------------------------------------------------------" << std::endl;
+    std::cout << "Objects::readIntrinsics() : ";
+    std::cout << "sizeX : " << sizeX;
+    std::cout << "sizeY : " << sizeY;
+    std::cout << "focalLength[0] : " << focalLength[0];
+    std::cout << "focalLength[1] : " << focalLength[1];
+    std::cout << "centerPoint[0] : " << centerPoint[0];
+    std::cout << "centerPoint[1] : " << centerPoint[1];
+
 	return true;
 }
 
@@ -37,6 +49,13 @@ bool ITMLib::Objects::readExtrinsics(std::istream & src, ITMExtrinsics & dest)
 	if (src.fail()) return false;
 
 	dest.SetFrom(calib);
+
+    // Display.
+    std::cout << "------------------------------------------------------------------------" << std::endl;
+    std::cout << "Objects::readExtrinsics() : ";
+    std::cout << "calib : " << std::endl;
+    std::cout << calib;
+
 	return true;
 }
 
@@ -55,27 +74,40 @@ bool ITMLib::Objects::readDisparityCalib(std::istream & src, ITMDisparityCalib &
 	ITMDisparityCalib::TrafoType type = ITMDisparityCalib::TRAFO_KINECT;
 	float a,b;
 
-	if (word.compare("kinect") == 0) {
+    if (word.compare("kinect") == 0)
+    {
 		type = ITMDisparityCalib::TRAFO_KINECT;
 		src >> a;
-	} else if (word.compare("affine") == 0) {
+    }
+    else if (word.compare("affine") == 0)
+    {
 		type = ITMDisparityCalib::TRAFO_AFFINE;
 		src >> a;
-	} else {
+    }
+    else
+    {
 		std::stringstream wordstream(word);
 		wordstream >> a;
-		if (wordstream.fail()) return false;
+        if (wordstream.fail()) return false;
 	}
 
 	src >> b;
-	if (src.fail()) return false;
+    if (src.fail()) return false;
 
-	if ((a == 0.0f) && (b == 0.0f)) {
+    if ((a == 0.0f) && (b == 0.0f))
+    {
 		type = ITMDisparityCalib::TRAFO_AFFINE;
 		a = 1.0f/1000.0f; b = 0.0f;
-	}
+    }
 
 	dest.SetFrom(a, b, type);
+
+    // Display.
+    std::cout << "------------------------------------------------------------------------" << std::endl;
+    std::cout << "Objects::readDisparityCalib() : ";
+    std::cout << "   a: " << a << std::endl;
+    std::cout << "   b: " << b << std::endl;
+
 	return true;
 }
 
@@ -87,10 +119,10 @@ bool ITMLib::Objects::readDisparityCalib(const char *fileName, ITMDisparityCalib
 
 bool ITMLib::Objects::readRGBDCalib(std::istream & src, ITMRGBDCalib & dest)
 {
-	if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_rgb)) return false;
-	if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_d)) return false;
-	if (!ITMLib::Objects::readExtrinsics(src, dest.trafo_rgb_to_depth)) return false;
-	if (!ITMLib::Objects::readDisparityCalib(src, dest.disparityCalib)) return false;
+    if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_rgb)) return false;
+    if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_d)) return false;
+    if (!ITMLib::Objects::readExtrinsics(src, dest.trafo_rgb_to_depth)) return false;
+    if (!ITMLib::Objects::readDisparityCalib(src, dest.disparityCalib)) return false;
 	return true;
 }
 
