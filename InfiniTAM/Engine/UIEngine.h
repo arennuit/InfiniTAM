@@ -95,6 +95,7 @@ namespace InfiniTAM
 			void GetScreenshot(ITMUChar4Image *dest) const;
 			void SaveScreenshot(const char *filename) const;
 			void SaveSceneToMesh(const char *filename) const;
+            void SavePointsCloudToPcdFile(const char *filename) const;
 		};
 	}
 }

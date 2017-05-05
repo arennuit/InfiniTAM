@@ -105,6 +105,9 @@ namespace ITMLib
 			/// Extracts a mesh from the current scene and saves it to the obj file specified by the file name
 			void SaveSceneToMesh(const char *objFileName);
 
+            /// Extracts a points cloud from the current scene and saves it to the PCD file specified by the file name
+            void SavePointsCloudToPcdFile(const char *objFileName);
+
 			/// Get a result image as output
 			Vector2i GetImageSize(void) const;
 

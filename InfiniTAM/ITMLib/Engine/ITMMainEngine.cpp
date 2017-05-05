@@ -107,6 +107,13 @@ void ITMMainEngine::SaveSceneToMesh(const char *objFileName)
 	mesh->WriteSTL(objFileName);
 }
 
+void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
+{
+    if (mesh == NULL) return;
+    meshingEngine->MeshScene(mesh, scene);
+    mesh->WritePCD(objFileName);
+}
+
 void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement)
 {
 	// prepare image and turn it into a depth image

@@ -213,6 +213,11 @@ void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 		uiEngine->SaveSceneToMesh("mesh.stl");
 		printf(" done\n");
 		break;
+    case 'p':
+        printf("saving points cloud to PCD file...");
+        uiEngine->SavePointsCloudToPcdFile("pointsCloud.pcd");
+        printf(" done\n");
+        break;
 	default:
 		break;
 	}
@@ -432,6 +437,11 @@ void UIEngine::SaveScreenshot(const char *filename) const
 void UIEngine::SaveSceneToMesh(const char *filename) const
 {
 	mainEngine->SaveSceneToMesh(filename);
+}
+
+void UIEngine::SavePointsCloudToPcdFile(const char *filename) const
+{
+    mainEngine->SavePointsCloudToPcdFile(filename);
 }
 
 void UIEngine::GetScreenshot(ITMUChar4Image *dest) const
