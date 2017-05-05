@@ -151,6 +151,8 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 		dim_shared1[locId_local] = isValidPoint;
 		__syncthreads();
 
+        // Reduction within a block.
+        // NOTE: this only works because the blocks are 16x16=256.
 		if (locId_local < 128) dim_shared1[locId_local] += dim_shared1[locId_local + 128];
 		__syncthreads();
 		if (locId_local < 64) dim_shared1[locId_local] += dim_shared1[locId_local + 64];
@@ -158,6 +160,7 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 
 		if (locId_local < 32) warpReduce(dim_shared1, locId_local);
 
+        // Reduction accross all blocks.
 		if (locId_local == 0) atomicAdd(&(accu->numPoints), (int)dim_shared1[locId_local]);
 	}
 
@@ -165,6 +168,8 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 		dim_shared1[locId_local] = b*b;
 		__syncthreads();
 
+        // Reduction within a block.
+        // NOTE: this only works because the blocks are 16x16=256.
 		if (locId_local < 128) dim_shared1[locId_local] += dim_shared1[locId_local + 128];
 		__syncthreads();
 		if (locId_local < 64) dim_shared1[locId_local] += dim_shared1[locId_local + 64];
@@ -172,6 +177,7 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 
 		if (locId_local < 32) warpReduce(dim_shared1, locId_local);
 
+        // Reduction accross all blocks.
 		if (locId_local == 0) atomicAdd(&(accu->f), dim_shared1[locId_local]);
 	}
 
