@@ -116,19 +116,22 @@ void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
 
 void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement)
 {
-	// prepare image and turn it into a depth image
-	if (imuMeasurement==NULL) viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter,settings->modelSensorNoise);
-	else viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, imuMeasurement);
+    // Prepare image and turn it into a depth image.
+    if (imuMeasurement == NULL)
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, settings->modelSensorNoise);
+    else
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, imuMeasurement);
 
-	if (!mainProcessingActive) return;
+    if (!mainProcessingActive)
+        return;
 
-	// tracking
+    // Tracking.
 	trackingController->Track(trackingState, view);
 
-	// fusion
+    // Fusion.
 	if (fusionActive) denseMapper->ProcessFrame(view, trackingState, scene, renderState_live);
 
-	// raycast to renderState_live for tracking and free visualisation
+    // Raycast to renderState_live for tracking and free visualisation.
 	trackingController->Prepare(trackingState, view, renderState_live);
 }
 

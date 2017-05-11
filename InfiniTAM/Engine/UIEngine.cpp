@@ -22,6 +22,7 @@
 using namespace InfiniTAM::Engine;
 UIEngine* UIEngine::instance;
 
+////////////////////////////////////////////////////////////////////////////////
 static void safe_glutBitmapString(void *font, const char *str)
 {
 	size_t len = strlen(str);
@@ -30,6 +31,7 @@ static void safe_glutBitmapString(void *font, const char *str)
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutDisplayFunction()
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -97,6 +99,7 @@ void UIEngine::glutDisplayFunction()
 	uiEngine->needsRefresh = false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutIdleFunction()
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -145,6 +148,7 @@ void UIEngine::glutIdleFunction()
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -272,6 +276,7 @@ static inline Matrix3f createRotation(const Vector3f & _axis, float angle)
 	return ret;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutMouseMoveFunction(int x, int y)
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -320,6 +325,7 @@ void UIEngine::glutMouseMoveFunction(int x, int y)
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutMouseWheelFunction(int button, int dir, int x, int y)
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -330,6 +336,7 @@ void UIEngine::glutMouseWheelFunction(int button, int dir, int x, int y)
 	uiEngine->needsRefresh = true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSource, IMUSourceEngine *imuSource, ITMMainEngine *mainEngine,
 	const char *outFolder, ITMLibSettings::DeviceType deviceType)
 {
@@ -427,6 +434,7 @@ void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSourc
 	printf("initialised.\n");
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::SaveScreenshot(const char *filename) const
 {
 	ITMUChar4Image screenshot(getWindowSize(), true, false);
@@ -434,31 +442,45 @@ void UIEngine::SaveScreenshot(const char *filename) const
 	SaveImageToFile(&screenshot, filename, true);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::SaveSceneToMesh(const char *filename) const
 {
 	mainEngine->SaveSceneToMesh(filename);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::SavePointsCloudToPcdFile(const char *filename) const
 {
     mainEngine->SavePointsCloudToPcdFile(filename);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::GetScreenshot(ITMUChar4Image *dest) const
 {
 	glReadPixels(0, 0, dest->noDims.x, dest->noDims.y, GL_RGBA, GL_UNSIGNED_BYTE, dest->GetData(MEMORYDEVICE_CPU));
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::ProcessFrame()
 {
-	if (!imageSource->hasMoreImages()) return;
+    // Check new image available
+    // NOTE: new rgb AND new depth need to be available.
+    if (!imageSource->hasMoreImages())
+        return;
+
+    // Get the new images.
 	imageSource->getImages(inputRGBImage, inputRawDepthImage);
 
-	if (imuSource != NULL) {
-		if (!imuSource->hasMoreMeasurements()) return;
-		else imuSource->getMeasurement(inputIMUMeasurement);
+    // Get the new IMU reading.
+    if (imuSource != NULL)
+    {
+        if (!imuSource->hasMoreMeasurements())
+            return;
+
+        imuSource->getMeasurement(inputIMUMeasurement);
 	}
 
+    // Recording.
 	if (isRecording)
 	{
 		char str[250];
@@ -472,12 +494,14 @@ void UIEngine::ProcessFrame()
 		}
 	}
 
+    // Actual processing.
 	sdkResetTimer(&timer_instant);
 	sdkStartTimer(&timer_instant); sdkStartTimer(&timer_average);
 
-	//actual processing on the mailEngine
-	if (imuSource != NULL) mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, inputIMUMeasurement);
-	else mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage);
+    if (imuSource != NULL)
+        mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, inputIMUMeasurement);
+    else
+        mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage);
 
 #ifndef COMPILE_WITHOUT_CUDA
 	ITMSafeCall(cudaThreadSynchronize());
@@ -490,7 +514,13 @@ void UIEngine::ProcessFrame()
 	currentFrameNo++;
 }
 
-void UIEngine::Run() { glutMainLoop(); }
+////////////////////////////////////////////////////////////////////////////////
+void UIEngine::Run()
+{
+    glutMainLoop();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::Shutdown()
 {
 	sdkDeleteTimer(&timer_instant);

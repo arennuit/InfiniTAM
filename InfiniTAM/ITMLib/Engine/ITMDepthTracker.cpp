@@ -10,18 +10,20 @@ using namespace ITMLib::Engine;
 ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
 	float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine, MemoryDeviceType memoryType)
 {
+    // Tracking regime (rotations, translations, or both) per level.
 	viewHierarchy = new ITMImageHierarchy<ITMTemplatedHierarchyLevel<ITMFloatImage> >(imgSize, trackingRegime, noHierarchyLevels, memoryType, true);
 	sceneHierarchy = new ITMImageHierarchy<ITMSceneHierarchyLevel>(imgSize, trackingRegime, noHierarchyLevels, memoryType, true);
 
-	this->noIterationsPerLevel = new int[noHierarchyLevels];
-	this->distThresh = new float[noHierarchyLevels];
-	
-	this->noIterationsPerLevel[0] = 2; //TODO -> make parameter
+    // Maximum number of iterations per level.
+    this->noIterationsPerLevel = new int[noHierarchyLevels];
+
+    this->noIterationsPerLevel[0] = 2; //TODO -> make parameter
 	for (int levelId = 1; levelId < noHierarchyLevels; levelId++)
 	{
 		noIterationsPerLevel[levelId] = noIterationsPerLevel[levelId - 1] + 2;
 	}
 
+    this->distThresh = new float[noHierarchyLevels];
 	float distThreshStep = distThresh / noHierarchyLevels;
 	this->distThresh[noHierarchyLevels - 1] = distThresh;
 	for (int levelId = noHierarchyLevels - 2; levelId >= 0; levelId--)
@@ -31,6 +33,7 @@ ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackin
 
 	this->noICPLevel = noICPRunTillLevel;
 
+    // Threshold used in hasConverged().
 	this->terminationThreshold = terminationThreshold;
 }
 
@@ -170,11 +173,14 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 			noValidPoints_new = this->ComputeGandH(f_new, nabla_new, hessian_new, approxInvPose);
 
 			// check if error increased. If so, revert
-			if ((noValidPoints_new <= 0)||(f_new > f_old)) {
+            if ((noValidPoints_new <= 0) || (f_new > f_old))
+            {
 				trackingState->pose_d->SetFrom(&lastKnownGoodPose);
 				approxInvPose = trackingState->pose_d->GetInvM();
 				lambda *= 10.0f;
-			} else {
+            }
+            else
+            {
 				lastKnownGoodPose.SetFrom(trackingState->pose_d);
 				f_old = f_new;
 
