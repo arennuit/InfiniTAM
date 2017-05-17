@@ -337,8 +337,12 @@ void UIEngine::glutMouseWheelFunction(int button, int dir, int x, int y)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSource, IMUSourceEngine *imuSource, ITMMainEngine *mainEngine,
-	const char *outFolder, ITMLibSettings::DeviceType deviceType)
+void UIEngine::Initialise(int & argc, char** argv,
+                          ImageSourceEngine *imageSource,
+                          IMUSourceEngine *imuSource,
+                          MocapSourceEngine *mocapSource,
+                          ITMMainEngine *mainEngine,
+                          const char *outFolder, ITMLibSettings::DeviceType deviceType)
 {
 	this->freeviewActive = false;
 	this->intergrationActive = true;
@@ -349,6 +353,7 @@ void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSourc
 
 	this->imageSource = imageSource;
 	this->imuSource = imuSource;
+    this->mocapSource = mocapSource;
 	this->mainEngine = mainEngine;
 	{
 		size_t len = strlen(outFolder);
@@ -472,13 +477,20 @@ void UIEngine::ProcessFrame()
 	imageSource->getImages(inputRGBImage, inputRawDepthImage);
 
     // Get the new IMU reading.
-    if (imuSource != NULL)
+    if (imuSource != 0)
     {
         if (!imuSource->hasMoreMeasurements())
             return;
 
         imuSource->getMeasurement(inputIMUMeasurement);
 	}
+
+    // Get the new mocap reading.
+    if (mocapSource != 0)
+    {
+        if (!mocapSource->hasMoreMeasurements())
+            return;
+    }
 
     // Recording.
 	if (isRecording)

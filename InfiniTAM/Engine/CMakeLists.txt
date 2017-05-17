@@ -39,6 +39,10 @@ OpenNIEngine.cpp
 OpenNIEngine.h
 LibUVCEngine.cpp
 LibUVCEngine.h
+MocapSourceEngine.cpp
+MocapSourceEngine.h
+MocapFileEngine.cpp
+MocapFileEngine.h
 UIEngine.cpp
 UIEngine.h
 CLIEngine.cpp

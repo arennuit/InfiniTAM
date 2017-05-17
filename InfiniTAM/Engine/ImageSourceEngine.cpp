@@ -34,7 +34,9 @@ ImageFileReader::~ImageFileReader()
 
 void ImageFileReader::loadIntoCache(void)
 {
-	if (currentFrameNo == cachedFrameNo) return;
+    if (currentFrameNo == cachedFrameNo)
+        return;
+
 	cachedFrameNo = currentFrameNo;
 
 	//TODO> make nicer

@@ -9,6 +9,7 @@
 
 #include "ImageSourceEngine.h"
 #include "IMUSourceEngine.h"
+#include "MocapFileEngine.h"
 
 #include <vector>
 
@@ -39,6 +40,7 @@ namespace InfiniTAM
 			ITMLibSettings internalSettings;
 			ImageSourceEngine *imageSource;
 			IMUSourceEngine *imuSource;
+            MocapSourceEngine *mocapSource;
 			ITMMainEngine *mainEngine;
 
 			StopWatchInterface *timer_instant;
@@ -86,8 +88,12 @@ namespace InfiniTAM
 			bool needsRefresh;
 			ITMUChar4Image *saveImage;
 
-			void Initialise(int & argc, char** argv, ImageSourceEngine *imageSource, IMUSourceEngine *imuSource, ITMMainEngine *mainEngine,
-				const char *outFolder, ITMLibSettings::DeviceType deviceType);
+            void Initialise(int & argc, char** argv,
+                            ImageSourceEngine *imageSource,
+                            IMUSourceEngine *imuSource,
+                            MocapSourceEngine *mocapSource,
+                            ITMMainEngine *mainEngine,
+                            const char *outFolder, ITMLibSettings::DeviceType deviceType);
 			void Shutdown();
 
 			void Run();

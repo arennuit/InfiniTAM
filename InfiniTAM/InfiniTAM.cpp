@@ -12,70 +12,154 @@
 
 using namespace InfiniTAM::Engine;
 
-/** Create a default source of depth images from a list of command line
-    arguments. Typically, @para arg1 would identify the calibration file to
-    use, @para arg2 the colour images, @para arg3 the depth images and
-    @para arg4 the IMU images. If images are omitted, some live sources will
-    be tried.
-*/
-static void CreateDefaultImageSource(ImageSourceEngine* & imageSource, IMUSourceEngine* & imuSource, const char *arg1, const char *arg2, const char *arg3, const char *arg4)
+////////////////////////////////////////////////////////////////////////////////
+/// Create a default source of depth images from the command line arguments.
+static void CreateDefaultImageSource(ImageSourceEngine*& imageSource, IMUSourceEngine*& imuSource, MocapSourceEngine*& mocapSource, int & argc, char** argv)
 {
-	const char *calibFile = arg1;
-	const char *filename1 = arg2;
-	const char *filename2 = arg3;
-	const char *filename_imu = arg4;
+    // Parse arguments.
+    uint isCalib     = 0;
+    uint isFiles     = 0;
+    uint isMocap     = 0;
+    uint isImu       = 0;
+    uint isOpenNi    = 0;
+    uint isUvc       = 0;
+    uint isRealSense = 0;
+    uint isKinect2   = 0;
 
-	printf("using calibration file: %s\n", calibFile);
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::string(argv[i]) == "--calib")
+            isCalib = i;
 
-	if (filename2 != NULL)
+        if (std::string(argv[i]) == "--files")
+            isFiles = i;
+
+        if (std::string(argv[i]) == "--mocap")
+            isMocap = i;
+
+        if (std::string(argv[i]) == "--imu")
+            isImu = i;
+
+        if (std::string(argv[i]) == "--openni")
+            isOpenNi = i;
+
+        if (std::string(argv[i]) == "--uvc")
+            isUvc = i;
+
+        if (std::string(argv[i]) == "--realsense")
+            isRealSense = i;
+
+        if (std::string(argv[i]) == "--kinect2")
+            isKinect2 = i;
+    }
+
+    // Calibration.
+    const char *calibFile = argv[isCalib + 1];
+
+    if (isCalib)
+    {
+        std::cout << "Custom calibration." << std::endl;
+        std::cout << "   using calib file: " << calibFile << std::endl;
+    }
+    else
+        std::cout << "Default calibration." << std::endl;
+
+    // Source.
+    if (isFiles)
+    {
+        // Files source.
+        const char *rgbFilepath   = argv[isFiles + 1];
+        const char *depthFilepath = argv[isFiles + 2];
+
+        std::cout << "Files source." << std::endl;
+        std::cout << "   using rgb   files: " << rgbFilepath   << std::endl;
+        std::cout << "   using depth files: " << depthFilepath << std::endl;
+
+        if (isMocap)
+        {
+            // Fusion with mocap.
+            const char *mocapFile = argv[isMocap + 1];
+
+            std::cout << "Fusion with mocap" << std::endl;
+            std::cout << "   using mocap file : " << mocapFile << std::endl;
+
+            imageSource = new ImageFileReader(calibFile, rgbFilepath, depthFilepath);
+            mocapSource = new MocapFileEngine(mocapFile);
+        }
+        else if(isImu)
+        {
+            // Fusion with IMU.
+            const char *imuFile = argv[isImu + 1];
+
+            std::cout << "Fusion with IMU." << std::endl;
+            std::cout << "   using IMU file : " << imuFile << std::endl;
+
+            imageSource = new RawFileReader(calibFile, rgbFilepath, depthFilepath, Vector2i(320, 240), 0.5f);
+            imuSource   = new IMUSourceEngine(imuFile);
+        }
+        else
+        {
+            // No fusion.
+            std::cout << "No fusion used." << std::endl;
+
+            imageSource = new ImageFileReader(calibFile, rgbFilepath, depthFilepath);
+        }
+    }
+    else if (isOpenNi && imageSource == NULL)
 	{
-		printf("using rgb images: %s\nusing depth images: %s\n", filename1, filename2);
-		if (filename_imu == NULL)
-		{
-			imageSource = new ImageFileReader(calibFile, filename1, filename2);
-		}
-		else
-		{
-			printf("using imu data: %s\n", filename_imu);
-			imageSource = new RawFileReader(calibFile, filename1, filename2, Vector2i(320, 240), 0.5f);
-			imuSource = new IMUSourceEngine(filename_imu);
-		}
-	}
+        // OpenNI source.
+        const char *deviceUri = 0;
+        if (isOpenNi != (uint)(argc - 1) && std::string(argv[isOpenNi + 1]).substr(0, 2) != "--")
+            deviceUri = argv[isOpenNi + 1];
 
-	if (imageSource == NULL)
-	{
-		printf("trying OpenNI device: %s\n", (filename1==NULL)?"<OpenNI default device>":filename1);
-		imageSource = new OpenNIEngine(calibFile, filename1);
+        std::cout << "OpenNI device source." << std::endl;
+        std::cout << "   device URI: " << std::string((deviceUri == 0) ? "<OpenNI default device>" : deviceUri) << std::endl;
+
+        imageSource = new OpenNIEngine(calibFile, deviceUri);
+
+        // Device not found.
 		if (imageSource->getDepthImageSize().x == 0)
 		{
 			delete imageSource;
 			imageSource = NULL;
 		}
 	}
-	if (imageSource == NULL)
+    else if (isUvc && imageSource == NULL)
 	{
-		printf("trying UVC device\n");
+        // UVC source.
+        std::cout << "UVC device source." << std::endl;
+
 		imageSource = new LibUVCEngine(calibFile);
+
+        // Device not found.
 		if (imageSource->getDepthImageSize().x == 0)
 		{
 			delete imageSource;
 			imageSource = NULL;
 		}
 	}
-	if (imageSource == NULL)
+    else if (isRealSense && imageSource == NULL)
 	{
-		printf("trying RealSense device\n");
+        // RealSense source.
+        std::cout << "RealSence device source." << std::endl;
+
 		imageSource = new RealSenseEngine(calibFile);
+
+        // Device not found.
 		if (imageSource->getDepthImageSize().x == 0)
 		{
 			delete imageSource;
 			imageSource = NULL;
 		}
 	}
-	if (imageSource == NULL)
+    else if (isKinect2 && imageSource == NULL)
 	{
-		printf("trying MS Kinect 2 device\n");
+        // Kinect2 source.
+        std::cout << "MS Kinect2 device source." << std::endl;
+
 		imageSource = new Kinect2Engine(calibFile);
+
+        // Device not found.
 		if (imageSource->getDepthImageSize().x == 0)
 		{
 			delete imageSource;
@@ -83,8 +167,10 @@ static void CreateDefaultImageSource(ImageSourceEngine* & imageSource, IMUSource
 		}
 	}
 
-	// this is a hack to ensure backwards compatibility in certain configurations
-	if (imageSource == NULL) return;
+    // This is a hack to ensure backwards compatibility in certain configurations.
+    if (imageSource == NULL)
+        return;
+
 	if (imageSource->calib.disparityCalib.params == Vector2f(0.0f, 0.0f))
 	{
 		imageSource->calib.disparityCalib.type = ITMDisparityCalib::TRAFO_AFFINE;
@@ -92,42 +178,39 @@ static void CreateDefaultImageSource(ImageSourceEngine* & imageSource, IMUSource
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 try
 {
-	const char *arg1 = "";
-	const char *arg2 = NULL;
-	const char *arg3 = NULL;
-	const char *arg4 = NULL;
+    // Check command line.
+    if (argc == 1)
+    {
+        std::cout << std::endl
+                  << "usage:" << std::endl
+                  << argv[0]
+                  << " [--calib <calibFile>]"
+                  << " [--files <rgbFile> <depthFile>]"
+                  << " [--openni [<device URI>]] [--uvc] [--realsense] [--kinect2]"
+                  << " [--imu [<imuFile>]] [--mocap [<mocapFile>]]"
+                  << std::endl
+                  << std::endl
+                  << "examples:\n"
+                  << "   1)" << argv[0] << " --calib ./Files/Teddy/calib.txt --files ./Files/Teddy/Frames/%%04i.ppm ./Files/Teddy/Frames/%%04i.pgm --mocap ./Files/Teddy/mocap.txt" << std::endl
+                  << "   2)" << argv[0] << " --calib ./Files/Teddy/calib.txt --openni" << std::endl
+                  << "   3)" << argv[0] << " --openni" << std::endl
+                  << "   4)" << argv[0] << " --calib ./Files/Teddy/calib.txt --openni --mocap" << std::endl
+                  << std::endl;
 
-	int arg = 1;
-	do {
-		if (argv[arg] != NULL) arg1 = argv[arg]; else break;
-		++arg;
-		if (argv[arg] != NULL) arg2 = argv[arg]; else break;
-		++arg;
-		if (argv[arg] != NULL) arg3 = argv[arg]; else break;
-		++arg;
-		if (argv[arg] != NULL) arg4 = argv[arg]; else break;
-	} while (false);
-
-	if (arg == 1) {
-		printf("usage: %s [<calibfile> [<imagesource>] ]\n"
-		       "  <calibfile>   : path to a file containing intrinsic calibration parameters\n"
-		       "  <imagesource> : either one argument to specify OpenNI device ID\n"
-		       "                  or two arguments specifying rgb and depth file masks\n"
-		       "\n"
-		       "examples:\n"
-		       "  %s ./Files/Teddy/calib.txt ./Files/Teddy/Frames/%%04i.ppm ./Files/Teddy/Frames/%%04i.pgm\n"
-		       "  %s ./Files/Teddy/calib.txt\n\n", argv[0], argv[0], argv[0]);
+        return 0;
 	}
 
-	printf("initialising ...\n");
-	ImageSourceEngine *imageSource = NULL;
-	IMUSourceEngine *imuSource = NULL;
+    std::cout << "--------- Initialising ---------" << std::endl;
+    ImageSourceEngine *imageSource = 0;
+    IMUSourceEngine   *imuSource   = 0;
+    MocapSourceEngine *mocapSource = 0;
 
-	CreateDefaultImageSource(imageSource, imuSource, arg1, arg2, arg3, arg4);
-	if (imageSource==NULL)
+    CreateDefaultImageSource(imageSource, imuSource, mocapSource, argc, argv);
+    if (imageSource == NULL)
 	{
 		std::cout << "failed to open any image stream" << std::endl;
 		return -1;
@@ -136,7 +219,7 @@ try
 	ITMLibSettings *internalSettings = new ITMLibSettings();
 	ITMMainEngine *mainEngine = new ITMMainEngine(internalSettings, &imageSource->calib, imageSource->getRGBImageSize(), imageSource->getDepthImageSize());
 
-	UIEngine::Instance()->Initialise(argc, argv, imageSource, imuSource, mainEngine, "./Files/Out", internalSettings->deviceType);
+    UIEngine::Instance()->Initialise(argc, argv, imageSource, imuSource, mocapSource, mainEngine, "./Files/Out", internalSettings->deviceType);
 	UIEngine::Instance()->Run();
 	UIEngine::Instance()->Shutdown();
 
