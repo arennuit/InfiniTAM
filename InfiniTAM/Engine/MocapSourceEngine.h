@@ -2,6 +2,8 @@
 
 #include "../ITMLib/ITMLib.h"
 
+#include "Core/EigenExtensions/EigenGeometryAndPlugins.h"
+
 namespace InfiniTAM
 {
 
@@ -16,7 +18,7 @@ public:
     ~MocapSourceEngine() {}
 
     virtual bool hasMoreMeasurements() = 0;
-//    void getMeasurement(Eigen::Frame *mocapFrame) = 0;
+    void getMeasurement(Eigen::Frame& mocapFrame) = 0;
 };
 
 } // namespace Engine.

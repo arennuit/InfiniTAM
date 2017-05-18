@@ -30,6 +30,26 @@ find_package(PNG QUIET)
 CANONIFY_BOOL(PNG_FOUND)
 message(STATUS "libpng found: ${PNG_FOUND}")
 
+# Eigen.
+# NOTE: for reasons we do not understand it is not possible to set
+#       CMAKE_MODULE_PATH as a relative path (although we do it in the toolkit)
+#       hence we use function get_filename_component() to transform the relative
+#       path to an absolute path.
+# NOTE: We also make sure to leave CMAKE_MODULE_PATH and CMAKE_PREFIX_PATH's
+#       value unchanged (as cmake complains about CUDA otherwise).
+set(CMAKE_MODULE_PATH_OLD ${CMAKE_MODULE_PATH})
+set(CMAKE_PREFIX_PATH_OLD ${CMAKE_PREFIX_PATH})
+
+get_filename_component(LC_CMAKE_FOLDER_PATH "../CMake" ABSOLUTE)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LC_CMAKE_FOLDER_PATH})
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../Dependencies/Eigen/v3.2.0)
+find_package(Eigen3 REQUIRED)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH_OLD})
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH_OLD})
+# End Eigen.
+
+
 OPTION(WITH_CUDA "Build with CUDA support?" ${CUDA_FOUND})
 INCLUDE(${PROJECT_SOURCE_DIR}/cmake/UseOpenMP.cmake)
 INCLUDE(${PROJECT_SOURCE_DIR}/cmake/UseRealSense.cmake)
@@ -52,6 +72,19 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
 ENDIF()
 
+# Use C++11.
+# NOTE: NVCC's option for C++11 needs to be specified separately (hence the 2nd
+#       line below).
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11" )
+
+################################################################################
+# Dependencies.
+# NOTE: this compiles Core and System specifically for the ROS package (and is
+#       redundant with the compilation of Core and System for the toolkit).
+add_subdirectory(../../Core ../build/Core)
+add_subdirectory(../../System ../build/System)
+
 add_subdirectory(ORUtils)
 add_subdirectory(ITMLib)
 add_subdirectory(Utils)
@@ -62,6 +95,10 @@ IF(WITH_CUDA)
 ELSE()
   add_definitions(-DCOMPILE_WITHOUT_CUDA)
 ENDIF()
+
+# Include eigen and extensions (from Core).
+include_directories(../../) # This path is used to find headers from [Core] and [System].
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 add_executable(InfiniTAM_cli InfiniTAM_cli.cpp)
 target_link_libraries(InfiniTAM_cli Engine)

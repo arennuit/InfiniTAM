@@ -200,6 +200,10 @@ SOURCE_GROUP(Utils FILES ${ITMLIB_UTILS_SOURCES} ${ITMLIB_UTILS_HEADERS})
 # Specify the include directories, target and link libraries #
 ##############################################################
 
+# Include eigen and extensions (from Core).
+include_directories(../../../) # This path is used to find headers from [Core] and [System].
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 if(WITH_CUDA)
   if(NOT DEFINED CUDA_COMPUTE_CAPABILITY)
     include(${PROJECT_SOURCE_DIR}/cmake/CUDACheckCompute.cmake)
@@ -221,4 +225,6 @@ else()
   add_library(ITMLib ${ITMLIB_CPU_OBJECTS} ${ITMLIB_COMMON_OBJECTS})
 endif()
 
-target_link_libraries(ITMLib Utils)
+target_link_libraries(ITMLib
+    Utils
+    Core)
