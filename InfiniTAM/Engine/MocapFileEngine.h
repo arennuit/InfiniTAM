@@ -2,6 +2,7 @@
 
 #include "MocapSourceEngine.h"
 
+#include <fstream>
 #include <string>
 
 namespace InfiniTAM
@@ -15,20 +16,19 @@ class MocapFileEngine : public MocapSourceEngine
 {
 public:
     MocapFileEngine(std::string const& mocapFilename);
-    ~MocapFileEngine() { }
+    ~MocapFileEngine();
 
     bool hasMoreMeasurements();
-    void getMeasurement(Eigen::Frame& mocapFrame) {mocapFrame = m_cachedFrame; m_cachedFrame.m_pos.x() = 5.0f;}
+    void getMeasurement(Eigen::Frame& mocapFrame) {mocapFrame = m_cachedFrame;}
 
 private:
     std::string m_mocapFilename;
 
-//    bool m_isMeasurementNew;
+    std::ifstream m_fileStream;
+
     Eigen::Frame m_cachedFrame;
 
     void loadMocapIntoCache();
-//    int m_cachedFrameNo;
-//    int m_currentFrameNo;
 };
 
 } // namespace Engine.

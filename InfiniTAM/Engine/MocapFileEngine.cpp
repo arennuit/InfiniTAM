@@ -1,6 +1,5 @@
 #include "MocapFileEngine.h"
 
-#include <fstream>
 
 namespace InfiniTAM
 {
@@ -11,32 +10,28 @@ namespace Engine
 ////////////////////////////////////////////////////////////////////////////////
 MocapFileEngine::MocapFileEngine(std::string const& mocapFilename) :
     MocapSourceEngine(),
-    m_mocapFilename(mocapFilename)
+    m_mocapFilename(mocapFilename),
+    m_fileStream(mocapFilename.c_str())
 {
-//    m_currentFrameNo = 0;
-//    m_cachedFrameNo = -1;
 
-    std::ifstream src(mocapFilename.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void MocapFileEngine::loadMocapIntoCache()
+MocapFileEngine::~MocapFileEngine()
 {
-//    // Check the cached frame was read.
-//    if (m_currentFrameNo == m_cachedFrameNo)
-//        return;
-
-//    m_cachedFrameNo = m_currentFrameNo;
-
-
+    m_fileStream.close();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 bool MocapFileEngine::hasMoreMeasurements()
 {
-    loadMocapIntoCache();
+    uint idx;
+    float x, y, z,
+          qx, qy, qz, qw;
+    m_fileStream >> idx >> x >> y >> z >> qx >> qy >> qz >> qw;
 
-//    return ((cached_rgb!=NULL) && (cached_depth!=NULL));
+    m_cachedFrame.setWXYZ(qw, qx, qy, qz, x, y, z);
+
     return true;
 }
 

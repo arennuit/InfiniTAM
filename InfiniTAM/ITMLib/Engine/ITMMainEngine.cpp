@@ -114,13 +114,15 @@ void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
     mesh->WritePCD(objFileName);
 }
 
-void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement)
+void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement, Eigen::Frame *mocapMeasurement)
 {
     // Prepare image and turn it into a depth image.
-    if (imuMeasurement == NULL)
-        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, settings->modelSensorNoise);
-    else
+    if (imuMeasurement != 0)
         viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, imuMeasurement);
+    else if (mocapMeasurement != 0)
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, mocapMeasurement);
+    else
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, settings->modelSensorNoise);
 
     if (!mainProcessingActive)
         return;

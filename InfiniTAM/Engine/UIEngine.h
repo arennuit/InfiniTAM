@@ -56,6 +56,7 @@ namespace InfiniTAM
 
 			ITMUChar4Image *inputRGBImage; ITMShortImage *inputRawDepthImage;
 			ITMIMUMeasurement *inputIMUMeasurement;
+            Eigen::Frame *m_inputMocapMeasurement;
 
 			bool freeviewActive;
 			bool intergrationActive;

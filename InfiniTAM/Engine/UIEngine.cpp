@@ -408,9 +408,10 @@ void UIEngine::Initialise(int & argc, char** argv,
 	for (int w = 0; w < NUM_WIN; w++)
 		outImage[w] = new ITMUChar4Image(imageSource->getDepthImageSize(), true, allocateGPU);
 
-	inputRGBImage = new ITMUChar4Image(imageSource->getRGBImageSize(), true, allocateGPU);
-	inputRawDepthImage = new ITMShortImage(imageSource->getDepthImageSize(), true, allocateGPU);
-	inputIMUMeasurement = new ITMIMUMeasurement();
+    inputRGBImage           = new ITMUChar4Image(imageSource->getRGBImageSize(), true, allocateGPU);
+    inputRawDepthImage      = new ITMShortImage(imageSource->getDepthImageSize(), true, allocateGPU);
+    inputIMUMeasurement     = new ITMIMUMeasurement();
+    m_inputMocapMeasurement = new Eigen::Frame();
 
 	saveImage = new ITMUChar4Image(imageSource->getDepthImageSize(), true, false);
 
@@ -490,6 +491,8 @@ void UIEngine::ProcessFrame()
     {
         if (!mocapSource->hasMoreMeasurements())
             return;
+
+        mocapSource->getMeasurement(*m_inputMocapMeasurement);
     }
 
     // Recording.
@@ -510,8 +513,10 @@ void UIEngine::ProcessFrame()
 	sdkResetTimer(&timer_instant);
 	sdkStartTimer(&timer_instant); sdkStartTimer(&timer_average);
 
-    if (imuSource != NULL)
+    if (imuSource != 0)
         mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, inputIMUMeasurement);
+    else if (mocapSource != 0)
+        mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, 0, m_inputMocapMeasurement);
     else
         mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage);
 
@@ -544,6 +549,7 @@ void UIEngine::Shutdown()
 	delete inputRGBImage;
 	delete inputRawDepthImage;
 	delete inputIMUMeasurement;
+    delete m_inputMocapMeasurement;
 
 	delete[] outFolder;
 	delete saveImage;

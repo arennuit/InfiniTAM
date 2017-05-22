@@ -18,7 +18,7 @@ public:
     ~MocapSourceEngine() {}
 
     virtual bool hasMoreMeasurements() = 0;
-    void getMeasurement(Eigen::Frame& mocapFrame) = 0;
+    virtual void getMeasurement(Eigen::Frame& mocapFrame) = 0;
 };
 
 } // namespace Engine.

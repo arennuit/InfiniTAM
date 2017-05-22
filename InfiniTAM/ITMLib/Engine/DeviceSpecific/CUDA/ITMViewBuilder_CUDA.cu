@@ -30,6 +30,7 @@ __global__ void ComputeNormalAndWeight_device(const float* depth_in, Vector4f* n
 //
 //---------------------------------------------------------------------------
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, bool useBilateralFilter, bool modelSensorNoise)
 {
 	if (*view_ptr == NULL)
@@ -81,6 +82,7 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMFloatImage *depthImage)
 {
 	if (*view_ptr == NULL)
@@ -92,11 +94,13 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 	view->depth->UpdateDeviceFromHost();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, ITMIMUMeasurement *imuMeasurement)
 {
 	if (*view_ptr == NULL) 
 	{
 		*view_ptr = new ITMViewIMU(calib, rgbImage->noDims, depthImage->noDims, true);
+
 		if (this->shortImage != NULL) delete this->shortImage;
 		this->shortImage = new ITMShortImage(depthImage->noDims, true, true);
 		if (this->floatImage != NULL) delete this->floatImage;
@@ -109,6 +113,26 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 	this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, Eigen::Frame* mocapMeasurement)
+{
+    if (*view_ptr == NULL)
+    {
+        *view_ptr = new ITMViewMocap(calib, rgbImage->noDims, depthImage->noDims, true);
+
+        if (this->shortImage != NULL) delete this->shortImage;
+        this->shortImage = new ITMShortImage(depthImage->noDims, true, true);
+        if (this->floatImage != NULL) delete this->floatImage;
+        this->floatImage = new ITMFloatImage(depthImage->noDims, true, true);
+    }
+
+    ITMViewMocap* mocapView = (ITMViewMocap*)(*view_ptr);
+    mocapView->m_mocapFrame = *mocapMeasurement;
+
+    this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::ConvertDisparityToDepth(ITMFloatImage *depth_out, const ITMShortImage *depth_in, const ITMIntrinsics *depthIntrinsics,
 	Vector2f disparityCalibParams)
 {
@@ -125,6 +149,7 @@ void ITMViewBuilder_CUDA::ConvertDisparityToDepth(ITMFloatImage *depth_out, cons
 	convertDisparityToDepth_device << <gridSize, blockSize >> >(d_out, d_in, disparityCalibParams, fx_depth, imgSize);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, const ITMShortImage *depth_in, Vector2f depthCalibParams)
 {
 	Vector2i imgSize = depth_in->noDims;
@@ -138,6 +163,7 @@ void ITMViewBuilder_CUDA::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, co
 	convertDepthAffineToFloat_device << <gridSize, blockSize >> >(d_out, d_in, imgSize, depthCalibParams);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::DepthFiltering(ITMFloatImage *image_out, const ITMFloatImage *image_in)
 {
 	Vector2i imgDims = image_in->noDims;
@@ -151,6 +177,7 @@ void ITMViewBuilder_CUDA::DepthFiltering(ITMFloatImage *image_out, const ITMFloa
 	filterDepth_device << <gridSize, blockSize >> >(imageData_out, imageData_in, imgDims);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMLib::Engine::ITMViewBuilder_CUDA::ComputeNormalAndWeights(ITMFloat4Image *normal_out, ITMFloatImage *sigmaZ_out, const ITMFloatImage *depth_in, Vector4f intrinsic)
 {
 	Vector2i imgDims = depth_in->noDims;
@@ -173,6 +200,7 @@ void ITMLib::Engine::ITMViewBuilder_CUDA::ComputeNormalAndWeights(ITMFloat4Image
 //
 //---------------------------------------------------------------------------
 
+////////////////////////////////////////////////////////////////////////////////
 __global__ void convertDisparityToDepth_device(float *d_out, const short *d_in, Vector2f disparityCalibParams, float fx_depth, Vector2i imgSize)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -183,6 +211,7 @@ __global__ void convertDisparityToDepth_device(float *d_out, const short *d_in, 
 	convertDisparityToDepth(d_out, x, y, d_in, disparityCalibParams, fx_depth, imgSize);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 __global__ void convertDepthAffineToFloat_device(float *d_out, const short *d_in, Vector2i imgSize, Vector2f depthCalibParams)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
@@ -193,6 +222,7 @@ __global__ void convertDepthAffineToFloat_device(float *d_out, const short *d_in
 	convertDepthAffineToFloat(d_out, x, y, d_in, imgSize, depthCalibParams);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 __global__ void filterDepth_device(float *imageData_out, const float *imageData_in, Vector2i imgDims)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x, y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -202,6 +232,7 @@ __global__ void filterDepth_device(float *imageData_out, const float *imageData_
 	filterDepth(imageData_out, imageData_in, x, y, imgDims);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 __global__ void ComputeNormalAndWeight_device(const float* depth_in, Vector4f* normal_out, float *sigmaZ_out, Vector2i imgDims, Vector4f intrinsic)
 {
 	int x = threadIdx.x + blockIdx.x * blockDim.x, y = threadIdx.y + blockIdx.y * blockDim.y;

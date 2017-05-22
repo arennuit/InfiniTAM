@@ -138,6 +138,7 @@ Objects/ITMTemplatedHierarchyLevel.h
 Objects/ITMTrackingState.h
 Objects/ITMView.h
 Objects/ITMViewIMU.h
+Objects/ITMViewMocap.h
 Objects/ITMViewHierarchyLevel.h
 Objects/ITMRenderState.h
 Objects/ITMRenderState_VH.h
