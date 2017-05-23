@@ -7,6 +7,7 @@
 
 using namespace ITMLib::Engine;
 
+////////////////////////////////////////////////////////////////////////////////
 ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
 	float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine, MemoryDeviceType memoryType)
 {
@@ -37,6 +38,7 @@ ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackin
 	this->terminationThreshold = terminationThreshold;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 ITMDepthTracker::~ITMDepthTracker(void) 
 { 
 	delete this->viewHierarchy;
@@ -46,6 +48,7 @@ ITMDepthTracker::~ITMDepthTracker(void)
 	delete[] this->distThresh;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::SetEvaluationData(ITMTrackingState *trackingState, const ITMView *view)
 {
 	this->trackingState = trackingState;
@@ -62,6 +65,7 @@ void ITMDepthTracker::SetEvaluationData(ITMTrackingState *trackingState, const I
 	scenePose = trackingState->pose_pointCloud->GetM();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::PrepareForEvaluation()
 {
 	for (int i = 1; i < viewHierarchy->noLevels; i++)
@@ -77,6 +81,7 @@ void ITMDepthTracker::PrepareForEvaluation()
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::SetEvaluationParams(int levelId)
 {
 	this->levelId = levelId;
@@ -85,6 +90,7 @@ void ITMDepthTracker::SetEvaluationParams(int levelId)
 	this->viewHierarchyLevel = viewHierarchy->levels[levelId];
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bool shortIteration) const
 {
 	for (int i = 0; i < 6; i++) step[i] = 0;
@@ -104,6 +110,7 @@ void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bo
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 bool ITMDepthTracker::HasConverged(float *step) const
 {
 	float stepLength = 0.0f;
@@ -114,6 +121,7 @@ bool ITMDepthTracker::HasConverged(float *step) const
 	return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, Matrix4f & para_new) const
 {
 	float step[6];
@@ -145,6 +153,7 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 	para_new = Tinc * para_old;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
 	this->SetEvaluationData(trackingState, view);

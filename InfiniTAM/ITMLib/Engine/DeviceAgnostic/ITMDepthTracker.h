@@ -5,6 +5,7 @@
 #include "../../Utils/ITMLibDefines.h"
 #include "ITMPixelUtils.h"
 
+////////////////////////////////////////////////////////////////////////////////
 template<bool shortIteration, bool rotationOnly>
 _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, THREADPTR(float) &b,
 	const THREADPTR(int) & x, const THREADPTR(int) & y,
@@ -14,29 +15,44 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
 {
 	if (depth <= 1e-8f) return false; //check if valid -- != 0.0f
 
-	Vector4f tmp3Dpoint, tmp3Dpoint_reproj; Vector3f ptDiff;
-	Vector4f curr3Dpoint, corr3Dnormal; Vector2f tmp2Dpoint;
+    // Inverse pinhole model (2D -> 3D).
+    Vector4f tmp3Dpoint,
+    Vector4f tmp3Dpoint_reproj;
 
-	tmp3Dpoint.x = depth * ((float(x) - viewIntrinsics.z) / viewIntrinsics.x);
-	tmp3Dpoint.y = depth * ((float(y) - viewIntrinsics.w) / viewIntrinsics.y);
+    float fx = viewIntrinsics.x;
+    float fy = viewIntrinsics.y;
+    float cx = viewIntrinsics.z;
+    float cy = viewIntrinsics.w;
+
+    tmp3Dpoint.x = depth * ((float(x) - cx) / fx);
+    tmp3Dpoint.y = depth * ((float(y) - cy) / fy);
 	tmp3Dpoint.z = depth;
 	tmp3Dpoint.w = 1.0f;
     
-	// transform to previous frame coordinates
+    // Transform to previous frame coordinates.
 	tmp3Dpoint = approxInvPose * tmp3Dpoint;
 	tmp3Dpoint.w = 1.0f;
 
-	// project into previous rendered image
+    // Project into previous rendered image.
+    Vector2f tmp2Dpoint;
+
 	tmp3Dpoint_reproj = scenePose * tmp3Dpoint;
-	if (tmp3Dpoint_reproj.z <= 0.0f) return false;
+    if (tmp3Dpoint_reproj.z <= 0.0f)
+        return false;
+
 	tmp2Dpoint.x = sceneIntrinsics.x * tmp3Dpoint_reproj.x / tmp3Dpoint_reproj.z + sceneIntrinsics.z;
 	tmp2Dpoint.y = sceneIntrinsics.y * tmp3Dpoint_reproj.y / tmp3Dpoint_reproj.z + sceneIntrinsics.w;
 
 	if (!((tmp2Dpoint.x >= 0.0f) && (tmp2Dpoint.x <= sceneImageSize.x - 2) && (tmp2Dpoint.y >= 0.0f) && (tmp2Dpoint.y <= sceneImageSize.y - 2)))
 		return false;
 
+    Vector4f curr3Dpoint;
+    Vector4f corr3Dnormal;
+
 	curr3Dpoint = interpolateBilinear_withHoles(pointsMap, tmp2Dpoint, sceneImageSize);
 	if (curr3Dpoint.w < 0.0f) return false;
+
+    Vector3f ptDiff;
 
 	ptDiff.x = curr3Dpoint.x - tmp3Dpoint.x;
 	ptDiff.y = curr3Dpoint.y - tmp3Dpoint.y;
@@ -72,6 +88,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
 	return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 template<bool shortIteration, bool rotationOnly>
 _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth(THREADPTR(float) *localNabla, THREADPTR(float) *localHessian, THREADPTR(float) &localF,
 	const THREADPTR(int) & x, const THREADPTR(int) & y,
