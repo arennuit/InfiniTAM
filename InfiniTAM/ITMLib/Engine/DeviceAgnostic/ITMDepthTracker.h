@@ -13,11 +13,13 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
 	const CONSTPTR(Vector4f) & sceneIntrinsics, const CONSTPTR(Matrix4f) & approxInvPose, const CONSTPTR(Matrix4f) & scenePose, const CONSTPTR(Vector4f) *pointsMap,
 	const CONSTPTR(Vector4f) *normalsMap, float distThresh)
 {
-	if (depth <= 1e-8f) return false; //check if valid -- != 0.0f
+    // Check if depth is valid.
+    if (depth <= 1e-8f)
+        return false;
 
-    // Inverse pinhole model (2D -> 3D).
-    Vector4f tmp3Dpoint,
-    Vector4f tmp3Dpoint_reproj;
+    // Compute s (expressed in frame k^z)
+    // NOTE: inverse pinhole model (2D -> 3D).
+    Vector4f tmp3Dpoint;
 
     float fx = viewIntrinsics.x;
     float fy = viewIntrinsics.y;
@@ -29,29 +31,40 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
 	tmp3Dpoint.z = depth;
 	tmp3Dpoint.w = 1.0f;
     
-    // Transform to previous frame coordinates.
+    // Express s in world frame.
+    // NOTE: approxInvPose = H_{k^(z-1)}_0.
 	tmp3Dpoint = approxInvPose * tmp3Dpoint;
-	tmp3Dpoint.w = 1.0f;
+    tmp3Dpoint.w = 1.0f; // Enforce w = 1.
 
-    // Project into previous rendered image.
-    Vector2f tmp2Dpoint;
+    // Express s in frame k-1.
+    // NOTE: scenePose = H_0_{k-1}.
+    Vector4f tmp3Dpoint_reproj;
 
-	tmp3Dpoint_reproj = scenePose * tmp3Dpoint;
+    tmp3Dpoint_reproj = scenePose * tmp3Dpoint;
     if (tmp3Dpoint_reproj.z <= 0.0f)
         return false;
 
-	tmp2Dpoint.x = sceneIntrinsics.x * tmp3Dpoint_reproj.x / tmp3Dpoint_reproj.z + sceneIntrinsics.z;
+    // Compute corresponding pixel in k-1.
+    // NOTE: pinhole model.
+    Vector2f tmp2Dpoint;
+
+    tmp2Dpoint.x = sceneIntrinsics.x * tmp3Dpoint_reproj.x / tmp3Dpoint_reproj.z + sceneIntrinsics.z;
 	tmp2Dpoint.y = sceneIntrinsics.y * tmp3Dpoint_reproj.y / tmp3Dpoint_reproj.z + sceneIntrinsics.w;
 
 	if (!((tmp2Dpoint.x >= 0.0f) && (tmp2Dpoint.x <= sceneImageSize.x - 2) && (tmp2Dpoint.y >= 0.0f) && (tmp2Dpoint.y <= sceneImageSize.y - 2)))
 		return false;
 
+    // Compute corresponding destination point d.
+    // NOTE: it is expressed in frame k-1.
     Vector4f curr3Dpoint;
     Vector4f corr3Dnormal;
 
 	curr3Dpoint = interpolateBilinear_withHoles(pointsMap, tmp2Dpoint, sceneImageSize);
-	if (curr3Dpoint.w < 0.0f) return false;
+    if (curr3Dpoint.w < 0.0f)
+        return false;
 
+    // Optimization: compute contribution to A and b.
+    // NOTE: the optimization aligns s on d (via movement M).
     Vector3f ptDiff;
 
 	ptDiff.x = curr3Dpoint.x - tmp3Dpoint.x;
