@@ -100,14 +100,21 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
             A[1] = -s_0.z * n_0.x + s_0.x * n_0.z;
             A[2] = +s_0.y * n_0.x - s_0.x * n_0.y;
 		}
-        else { A[0] = n_0.x; A[1] = n_0.y; A[2] = n_0.z; }
+        else
+        {
+            A[0] = n_0.x;
+            A[1] = n_0.y;
+            A[2] = n_0.z;
+        }
 	}
 	else
 	{
         A[0] = +s_0.z * n_0.y - s_0.y * n_0.z;
         A[1] = -s_0.z * n_0.x + s_0.x * n_0.z;
         A[2] = +s_0.y * n_0.x - s_0.x * n_0.y;
-        A[!shortIteration ? 3 : 0] = n_0.x; A[!shortIteration ? 4 : 1] = n_0.y; A[!shortIteration ? 5 : 2] = n_0.z;
+        A[3] = n_0.x;
+        A[4] = n_0.y;
+        A[5] = n_0.z;
 	}
 
 	return true;
