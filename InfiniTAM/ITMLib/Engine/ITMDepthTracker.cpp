@@ -170,9 +170,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             continue;
 
 		Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
-		ITMPose lastKnownGoodPose(*(trackingState->pose_d));
 		f_old = 1e20f;
-		float lambda = 1.0;
 
         // Loop on iterations per level.
 		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
@@ -181,27 +179,35 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             float hessian[6 * 6];
             float nabla[6];
 
-			noValidPoints_new = this->ComputeGandH(f_new, nabla, hessian, approxInvPose);
+            noValidPoints_new = this->ComputeGandH(f_new, nabla, hessian, approxInvPose);
 
-			// check if error increased. If so, revert
+            // check if error increased. If so, revert
             if ((noValidPoints_new <= 0) || (f_new > f_old))
             {
-				trackingState->pose_d->SetFrom(&lastKnownGoodPose);
-				approxInvPose = trackingState->pose_d->GetInvM();
-				lambda *= 10.0f;
+//                // Revert and stop iterating at the current level.
+//                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
+//                approxInvPose = trackingState->pose_d->GetInvM();
+
+//                lambda *= 10.0f;
+
+                // DEBUG.
+                std::cout << "!!!!!!!!!!!!!!!!!!!! ERROR INCREASED. f_old: " << f_old << " f_new: " << f_new << " !!!!!!!!!!!!!!!!!!!!" << std::endl;
+
+                break;
             }
-            else
-            {
-				lastKnownGoodPose.SetFrom(trackingState->pose_d);
-				f_old = f_new;
+
+//            lastKnownGoodPose.SetFrom(trackingState->pose_d);
+
+            f_old = f_new;
 
 //            for (int i = 0; i < 6*6; ++i) hessian_good[i] = hessian_new[i] / noValidPoints_new;
 //            for (int i = 0; i < 6; ++i) nabla_good[i] = nabla_new[i] / noValidPoints_new;
 
-				lambda /= 10.0f;
-			}
+//            lambda /= 10.0f;
+
+//            // DEBUG: no need to damp the hessian for inversion, as we now do an SVD.
 //            for (int i = 0; i < 6*6; ++i) A[i] = hessian_good[i];
-			for (int i = 0; i < 6; ++i) hessian[i+i*6] *= 1.0f + lambda;
+//            for (int i = 0; i < 6; ++i) A[i+i*6] *= 1.0f + lambda;
 
 			// compute a new step and make sure we've got an SE3
 			float step[6];
