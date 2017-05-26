@@ -116,12 +116,12 @@ namespace ITMLib
 			void GetImage(ITMUChar4Image *out, GetImageType getImageType, ITMPose *pose = NULL, ITMIntrinsics *intrinsics = NULL);
 
 			/// switch for turning intergration on/off
-			void turnOnIntegration();
-			void turnOffIntegration();
+            void turnOnIntegration() { fusionActive = true; }
+            void turnOffIntegration() { fusionActive = false; }
 
 			/// switch for turning main processing on/off
-			void turnOnMainProcessing();
-			void turnOffMainProcessing();
+            void turnOnMainProcessing() { mainProcessingActive = true; }
+            void turnOffMainProcessing() { mainProcessingActive = false; }
 
 			/** \brief Constructor
 			    Ommitting a separate image size for the depth images

@@ -8,6 +8,7 @@
 
 #include "../../Utils/ITMLibDefines.h"
 
+////////////////////////////////////////////////////////////////////////////////
 template<typename T> _CPU_AND_GPU_CODE_ inline Vector4f interpolateBilinear(const CONSTPTR(T) *source,
 	const THREADPTR(Vector2f) & position, const CONSTPTR(Vector2i) & imgSize)
 {
@@ -38,6 +39,7 @@ template<typename T> _CPU_AND_GPU_CODE_ inline Vector4f interpolateBilinear(cons
 	return result;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 template<typename T> _CPU_AND_GPU_CODE_ inline Vector4f interpolateBilinear_withHoles(const CONSTPTR(T) *source,
 	const THREADPTR(Vector2f) & position, const CONSTPTR(Vector2i) & imgSize)
 {
@@ -70,6 +72,7 @@ template<typename T> _CPU_AND_GPU_CODE_ inline Vector4f interpolateBilinear_with
 	return result;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 template<typename T> _CPU_AND_GPU_CODE_ inline float interpolateBilinear_withHoles_single(const CONSTPTR(T) *source,
 	const THREADPTR(Vector2f) & position, const CONSTPTR(Vector2i) & imgSize)
 {
