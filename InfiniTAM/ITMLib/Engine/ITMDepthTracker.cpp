@@ -162,10 +162,6 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 	float f_old = 1e10, f_new;
 	int noValidPoints_new;
 
-	float hessian_good[6 * 6], hessian_new[6 * 6], A[6 * 6];
-	float nabla_good[6], nabla_new[6];
-	float step[6];
-
 	for (int levelId = viewHierarchy->noLevels - 1; levelId >= noICPLevel; levelId--)
 	{
 		this->SetEvaluationParams(levelId);
@@ -178,8 +174,11 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
 		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
 		{
-			// evaluate error function and gradients
-			noValidPoints_new = this->ComputeGandH(f_new, nabla_new, hessian_new, approxInvPose);
+            // evaluate error function and gradients
+            float hessian[6 * 6];
+            float nabla[6];
+            
+			noValidPoints_new = this->ComputeGandH(f_new, nabla, hessian, approxInvPose);
 
 			// check if error increased. If so, revert
             if ((noValidPoints_new <= 0) || (f_new > f_old))
@@ -193,15 +192,19 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 				lastKnownGoodPose.SetFrom(trackingState->pose_d);
 				f_old = f_new;
 
-				for (int i = 0; i < 6*6; ++i) hessian_good[i] = hessian_new[i] / noValidPoints_new;
-				for (int i = 0; i < 6; ++i) nabla_good[i] = nabla_new[i] / noValidPoints_new;
+//            for (int i = 0; i < 6*6; ++i) hessian_good[i] = hessian_new[i] / noValidPoints_new;
+//            for (int i = 0; i < 6; ++i) nabla_good[i] = nabla_new[i] / noValidPoints_new;
+
 				lambda /= 10.0f;
 			}
-			for (int i = 0; i < 6*6; ++i) A[i] = hessian_good[i];
-			for (int i = 0; i < 6; ++i) A[i+i*6] *= 1.0f + lambda;
+//            for (int i = 0; i < 6*6; ++i) A[i] = hessian_good[i];
+			for (int i = 0; i < 6; ++i) hessian[i+i*6] *= 1.0f + lambda;
 
 			// compute a new step and make sure we've got an SE3
-			ComputeDelta(step, nabla_good, A, iterationType != TRACKER_ITERATION_BOTH);
+			float step[6];
+			
+			ComputeDelta(step, nabla, hessian, iterationType != TRACKER_ITERATION_BOTH);
+
 			ApplyDelta(approxInvPose, step, approxInvPose);
 			trackingState->pose_d->SetInvM(approxInvPose);
 			trackingState->pose_d->Coerce();
