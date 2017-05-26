@@ -159,8 +159,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 	this->SetEvaluationData(trackingState, view);
     this->PrepareForEvaluation();
 
-	float f_old = 1e10, f_new;
-	int noValidPoints_new;
+    Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
 
     // Loop on levels.
 	for (int levelId = viewHierarchy->noLevels - 1; levelId >= noICPLevel; levelId--)
@@ -169,20 +168,19 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         if (iterationType == TRACKER_ITERATION_NONE)
             continue;
 
-		Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
-		f_old = 1e20f;
-
         // Loop on iterations per level.
+        float f_old = 1e20f;
 		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
         {
             // Evaluate error function and gradients.
+            float f_new;
             float hessian[6 * 6];
             float nabla[6];
 
-            noValidPoints_new = this->ComputeGandH(f_new, nabla, hessian, approxInvPose);
+            int validPointsNum = this->ComputeGandH(f_new, nabla, hessian, approxInvPose);
 
-            // check if error increased. If so, revert
-            if ((noValidPoints_new <= 0) || (f_new > f_old))
+            // Check if error decreased.
+            if ((validPointsNum <= 0) || (f_new > f_old))
             {
 //                // Revert and stop iterating at the current level.
 //                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
@@ -209,15 +207,16 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 //            for (int i = 0; i < 6*6; ++i) A[i] = hessian_good[i];
 //            for (int i = 0; i < 6; ++i) A[i+i*6] *= 1.0f + lambda;
 
-			// compute a new step and make sure we've got an SE3
-			float step[6];
-			
-			ComputeDelta(step, nabla, hessian, iterationType != TRACKER_ITERATION_BOTH);
+            // Compute the new camera frame.
+            // NOTE: the result is orthonormalized (to make sure it belongs to SE3).
+            float step[6];
 
+            ComputeDelta(step, nabla, hessian, iterationType != TRACKER_ITERATION_BOTH);
 			ApplyDelta(approxInvPose, step, approxInvPose);
+
 			trackingState->pose_d->SetInvM(approxInvPose);
-			trackingState->pose_d->Coerce();
-			approxInvPose = trackingState->pose_d->GetInvM();
+            trackingState->pose_d->Coerce(); // Orthonormalization.
+            approxInvPose = trackingState->pose_d->GetInvM();
 
             // If step is small, assume it's going to decrease the error and finish.
             if (HasConverged(step))
