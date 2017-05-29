@@ -68,16 +68,27 @@ void ITMDepthTracker::SetEvaluationData(ITMTrackingState *trackingState, const I
 ////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::PrepareForEvaluation()
 {
+    // Subsample view and scene to prepare the depth maps at levels > 0.
+    // NOTE: depth maps at level 0 are provided by the imager (view) and by the
+    //       raytracer (scene).
 	for (int i = 1; i < viewHierarchy->noLevels; i++)
 	{
-		ITMTemplatedHierarchyLevel<ITMFloatImage> *currentLevelView = viewHierarchy->levels[i], *previousLevelView = viewHierarchy->levels[i - 1];
-		lowLevelEngine->FilterSubsampleWithHoles(currentLevelView->depth, previousLevelView->depth);
-		currentLevelView->intrinsics = previousLevelView->intrinsics * 0.5f;
+        // View preparation.
+        ITMTemplatedHierarchyLevel<ITMFloatImage> *currentLevelView  = viewHierarchy->levels[i];
+        ITMTemplatedHierarchyLevel<ITMFloatImage> *previousLevelView = viewHierarchy->levels[i - 1];
 
-		ITMSceneHierarchyLevel *currentLevelScene = sceneHierarchy->levels[i], *previousLevelScene = sceneHierarchy->levels[i - 1];
-		//lowLevelEngine->FilterSubsampleWithHoles(currentLevelScene->pointsMap, previousLevelScene->pointsMap);
+		lowLevelEngine->FilterSubsampleWithHoles(currentLevelView->depth, previousLevelView->depth);
+
+        currentLevelView->intrinsics = previousLevelView->intrinsics * 0.5f;
+
+        // Scene preparation.
+        ITMSceneHierarchyLevel *currentLevelScene  = sceneHierarchy->levels[i];
+        ITMSceneHierarchyLevel *previousLevelScene = sceneHierarchy->levels[i - 1];
+
+        //lowLevelEngine->FilterSubsampleWithHoles(currentLevelScene->pointsMap, previousLevelScene->pointsMap);
 		//lowLevelEngine->FilterSubsampleWithHoles(currentLevelScene->normalsMap, previousLevelScene->normalsMap);
-		currentLevelScene->intrinsics = previousLevelScene->intrinsics * 0.5f;
+
+        currentLevelScene->intrinsics = previousLevelScene->intrinsics * 0.5f;
 	}
 }
 
@@ -145,6 +156,8 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 
 	Matrix4f Tinc;
 
+    // WARNING: matrix use a colum-major convention (rather than the usual row-major).
+    // Hence the coefficient look translated here (though they are not).
 	Tinc.m00 = 1.0f;		Tinc.m10 = step[2];		Tinc.m20 = -step[1];	Tinc.m30 = step[3];
 	Tinc.m01 = -step[2];	Tinc.m11 = 1.0f;		Tinc.m21 = step[0];		Tinc.m31 = step[4];
 	Tinc.m02 = step[1];		Tinc.m12 = -step[0];	Tinc.m22 = 1.0f;		Tinc.m32 = step[5];
@@ -156,7 +169,8 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 ////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
-	this->SetEvaluationData(trackingState, view);
+    // Prepare the view and scene.
+    this->SetEvaluationData(trackingState, view);
     this->PrepareForEvaluation();
 
     Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
