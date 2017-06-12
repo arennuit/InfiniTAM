@@ -134,14 +134,19 @@ void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDep
         return;
 
     // Tracking.
-	trackingController->Track(trackingState, view);
+    trackingController->PreTrack(trackingState, view);
+    trackingController->Prepare(trackingState, view, renderState_live);
+    trackingController->Track(trackingState, view);
 
     // Fusion.
     if (fusionActive)
         denseMapper->ProcessFrame(view, trackingState, scene, renderState_live);
 
     // Raycast to renderState_live for tracking and free visualisation.
-	trackingController->Prepare(trackingState, view, renderState_live);
+    trackingController->Prepare(trackingState, view, renderState_live);
+
+    // Frame index.
+    ++(trackingState->m_frameIdx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

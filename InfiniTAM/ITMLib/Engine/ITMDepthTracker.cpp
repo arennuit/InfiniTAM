@@ -2,14 +2,18 @@
 
 #include "ITMDepthTracker.h"
 #include "../../ORUtils/Cholesky.h"
+#include "../Objects/ITMViewMocap.h"
+
+#include <unsupported/Eigen/MatrixFunctions>
 
 #include <math.h>
+#include <iomanip>
 
 using namespace ITMLib::Engine;
 
 ////////////////////////////////////////////////////////////////////////////////
 ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
-	float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine, MemoryDeviceType memoryType)
+    float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine, MemoryDeviceType memoryType)
 {
     // Tracking regime (rotations, translations, or both) per level.
 	viewHierarchy = new ITMImageHierarchy<ITMTemplatedHierarchyLevel<ITMFloatImage> >(imgSize, trackingRegime, noHierarchyLevels, memoryType, true);
@@ -45,7 +49,7 @@ ITMDepthTracker::~ITMDepthTracker(void)
 	delete this->sceneHierarchy;
 
 	delete[] this->noIterationsPerLevel;
-	delete[] this->distThresh;
+    delete[] this->distThresh;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,9 +64,9 @@ void ITMDepthTracker::SetEvaluationData(ITMTrackingState *trackingState, const I
 	// the image hierarchy allows pointers to external data at level 0
 	viewHierarchy->levels[0]->depth = view->depth;
 	sceneHierarchy->levels[0]->pointsMap = trackingState->pointCloud->locations;
-	sceneHierarchy->levels[0]->normalsMap = trackingState->pointCloud->colours;
+    sceneHierarchy->levels[0]->normalsMap = trackingState->pointCloud->colours;
 
-	scenePose = trackingState->pose_pointCloud->GetM();
+//    scenePose = trackingState->pose_pointCloud->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -163,7 +167,28 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 	Tinc.m02 = step[1];		Tinc.m12 = -step[0];	Tinc.m22 = 1.0f;		Tinc.m32 = step[5];
 	Tinc.m03 = 0.0f;		Tinc.m13 = 0.0f;		Tinc.m23 = 0.0f;		Tinc.m33 = 1.0f;
 
-	para_new = Tinc * para_old;
+    para_new = Tinc * para_old;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+{
+    // Initialize the tracker.
+    // NOTE: use the mocap frame for init.
+    ITMViewMocap* mocapView = (ITMViewMocap*)view;
+    static Eigen::Frame mocap_frame_init = mocapView->m_mocapFrame;
+    Eigen::Frame mocap_frame = mocap_frame_init.getInverse() * mocapView->m_mocapFrame;
+    Eigen::Frame mocapInv_frame = mocap_frame.getInverse();
+    ITMPose mocapInv_pose;
+    FrameToPose(mocapInv_pose, mocapInv_frame);
+
+    approxInvPose = trackingState->pose_d->GetInvM();
+    trackingState->pose_d->SetInvM(approxInvPose);
+//    trackingState->pose_d->SetFrom(&mocapInv_pose);
+
+    trackingState->pose_d->Coerce(); // Orthonormalization.
+    approxInvPose = trackingState->pose_d->GetInvM();
+    scenePose = trackingState->pose_d->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -173,18 +198,16 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     this->SetEvaluationData(trackingState, view);
     this->PrepareForEvaluation();
 
-    Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
-
     // Loop on levels.
-	for (int levelId = viewHierarchy->noLevels - 1; levelId >= noICPLevel; levelId--)
+    for (int levelId = viewHierarchy->noLevels - 1; levelId >= noICPLevel; levelId--)
     {
-		this->SetEvaluationParams(levelId);
+        this->SetEvaluationParams(levelId);
         if (iterationType == TRACKER_ITERATION_NONE)
             continue;
 
         // Loop on iterations per level.
         float f_old = 1e20f;
-		for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
+        for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
         {
             // Evaluate error function and gradients.
             float f_new;
@@ -196,16 +219,17 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             // Check if error decreased.
             if ((validPointsNum <= 0) || (f_new > f_old))
             {
-//                // Revert and stop iterating at the current level.
+                // Revert and stop iterating at the current level.
 //                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
 //                approxInvPose = trackingState->pose_d->GetInvM();
 
 //                lambda *= 10.0f;
 
-                // DEBUG.
-                std::cout << "!!!!!!!!!!!!!!!!!!!! ERROR INCREASED. f_old: " << f_old << " f_new: " << f_new << " !!!!!!!!!!!!!!!!!!!!" << std::endl;
+                std::cout << "   " << std::setw(2) << levelId << std::setw(7) << iterNo << " !!!!!!!!!!!!!!!!!!!! ERROR INCREASED. validPointsNum : " << validPointsNum << " f_old: " << f_old << " f_new: " << f_new << " !!!!!!!!!!!!!!!!!!!!" << std::endl;
 
-                break;
+                // HACK.
+                if (trackingState->m_frameIdx == 0)
+                    break;
             }
 
 //            lastKnownGoodPose.SetFrom(trackingState->pose_d);
@@ -226,16 +250,56 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             float step[6];
 
             ComputeDelta(step, nabla, hessian, iterationType != TRACKER_ITERATION_BOTH);
-			ApplyDelta(approxInvPose, step, approxInvPose);
+            ApplyDelta(approxInvPose, step, approxInvPose);
 
-			trackingState->pose_d->SetInvM(approxInvPose);
+            trackingState->pose_d->SetInvM(approxInvPose);
             trackingState->pose_d->Coerce(); // Orthonormalization.
             approxInvPose = trackingState->pose_d->GetInvM();
 
             // If step is small, assume it's going to decrease the error and finish.
             if (HasConverged(step))
                 break;
-		}
-	}
+        }
+    }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::FrameToPose(ITMPose& pose, Eigen::Frame const& frame)
+{
+    Matrix4f pose_mat;
+    FrameToMat(pose_mat, frame);
+
+    pose.SetM(pose_mat);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::PoseToFrame(Eigen::Frame& frame, ITMPose const& pose)
+{
+    Matrix4f pose_mat = pose.GetM();
+    Eigen::Matrix4f frame_mat;
+    frame_mat << pose_mat.m[0], pose_mat.m[4], pose_mat.m[ 8], pose_mat.m[12],
+                 pose_mat.m[1], pose_mat.m[5], pose_mat.m[ 9], pose_mat.m[13],
+                 pose_mat.m[2], pose_mat.m[6], pose_mat.m[10], pose_mat.m[14],
+                 pose_mat.m[3], pose_mat.m[7], pose_mat.m[11], pose_mat.m[15];
+
+    frame = Eigen::Frame(frame_mat);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::FrameToMat(Matrix4f& mat, Eigen::Frame const& frame)
+{
+    Eigen::Matrix4f frame_mat = frame.toMatrix4();
+    mat.m[0] = frame_mat(0, 0); mat.m[4] = frame_mat(0, 1); mat.m[ 8] = frame_mat(0, 2); mat.m[12] = frame_mat(0, 3);
+    mat.m[1] = frame_mat(1, 0), mat.m[5] = frame_mat(1, 1), mat.m[ 9] = frame_mat(1, 2), mat.m[13] = frame_mat(1, 3),
+    mat.m[2] = frame_mat(2, 0), mat.m[6] = frame_mat(2, 1), mat.m[10] = frame_mat(2, 2), mat.m[14] = frame_mat(2, 3),
+    mat.m[3] = frame_mat(3, 0), mat.m[7] = frame_mat(3, 1), mat.m[11] = frame_mat(3, 2), mat.m[15] = frame_mat(3, 3);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::PrintPose(ITMPose& pose)
+{
+    Vector3f t, r;
+    pose.GetParams(t, r);
+
+    std::cout << std::setw(10) << t.x << " " << std::setw(10) << t.y << " " << std::setw(10) << t.z << " " << std::setw(10) << r.x << " " << std::setw(10) << r.y << " " << std::setw(10) << r.z << std::endl;
+}

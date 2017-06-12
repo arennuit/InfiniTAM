@@ -116,6 +116,7 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 ////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, Eigen::Frame* mocapMeasurement)
 {
+    // Create the view (if it does not exist yet).
     if (*view_ptr == NULL)
     {
         *view_ptr = new ITMViewMocap(calib, rgbImage->noDims, depthImage->noDims, true);
@@ -126,6 +127,7 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
         this->floatImage = new ITMFloatImage(depthImage->noDims, true, true);
     }
 
+    // Update view.
     ITMViewMocap* mocapView = (ITMViewMocap*)(*view_ptr);
     mocapView->m_mocapFrame = *mocapMeasurement;
 

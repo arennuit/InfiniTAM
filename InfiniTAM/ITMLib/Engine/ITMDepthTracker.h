@@ -11,6 +11,12 @@
 #include "../Engine/ITMTracker.h"
 #include "../Engine/ITMLowLevelEngine.h"
 
+#include "Core/EigenExtensions/EigenGeometryAndPlugins.h"
+
+// DEBUG.
+#include <fstream>
+#include <string>
+
 using namespace ITMLib::Objects;
 
 namespace ITMLib
@@ -49,13 +55,20 @@ namespace ITMLib
 			int levelId;
 			TrackerIterationType iterationType;
 
+            Matrix4f approxInvPose;
 			Matrix4f scenePose;
 			ITMSceneHierarchyLevel *sceneHierarchyLevel;
 			ITMTemplatedHierarchyLevel<ITMFloatImage> *viewHierarchyLevel;
 
 			virtual int ComputeGandH(float &f, float *nabla, float *hessian, Matrix4f approxInvPose) = 0;
 
+            void FrameToPose(ITMPose& pose, Eigen::Frame const& frame);
+            void PoseToFrame(Eigen::Frame& frame, ITMPose const& pose);
+            void FrameToMat(Matrix4f& mat, Eigen::Frame const& frame);
+            void PrintPose(ITMPose& pose);
+
 		public:
+            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view);
 			void TrackCamera(ITMTrackingState *trackingState, const ITMView *view);
 
 			ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
