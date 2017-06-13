@@ -135,8 +135,8 @@ void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDep
 
     // Tracking.
     trackingController->PreTrack(trackingState, view);
-//    trackingController->Prepare(trackingState, view, renderState_live);
-//    trackingController->Track(trackingState, view);
+    trackingController->Prepare(trackingState, view, renderState_live);
+    trackingController->Track(trackingState, view);
 
     // Fusion.
     if (fusionActive)
