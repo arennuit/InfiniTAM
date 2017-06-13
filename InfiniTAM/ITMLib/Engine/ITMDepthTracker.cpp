@@ -173,18 +173,31 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 ////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
-    // Initialize the tracker.
-    // NOTE: use the mocap frame for init.
+    // Compute mocap current frame with respect to init frame.
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
     static Eigen::Frame mocap_frame_init = mocapView->m_mocapFrame;
     Eigen::Frame mocap_frame = mocap_frame_init.getInverse() * mocapView->m_mocapFrame;
-    Eigen::Frame mocapInv_frame = mocap_frame.getInverse();
-    ITMPose mocapInv_pose;
-    FrameToPose(mocapInv_pose, mocapInv_frame);
 
-    approxInvPose = trackingState->pose_d->GetInvM();
-    trackingState->pose_d->SetInvM(approxInvPose);
-//    trackingState->pose_d->SetFrom(&mocapInv_pose);
+    // Convert ICL-NUIM frame convention to InfiniTAM convention.
+    // NOTE: I have no idea where this conversion stems from.
+    Eigen::Vector3f mocap_rotVec = mocap_frame.m_quat.toRotationVector();
+    Eigen::Vector3f mocap_pos    = mocap_frame.m_pos;
+
+    Eigen::Vector3f mocap_rotVec_corrected(-mocap_rotVec.x(), mocap_rotVec.y(), -mocap_rotVec.z());
+    Eigen::Vector3f mocap_pos_corrected(mocap_pos.x(), -mocap_pos.y(), mocap_pos.z());
+
+    Eigen::Frame mocap_frame_corrected;
+    mocap_frame_corrected.m_quat.fromRotationVector(mocap_rotVec_corrected);
+    mocap_frame_corrected.m_pos = mocap_pos_corrected;
+
+    // Initialize the tracker.
+    Eigen::Frame mocap_inv_frame_corrected = mocap_frame_corrected.getInverse();
+    ITMPose mocapInv_pose;
+    FrameToPose(mocapInv_pose, mocap_inv_frame_corrected);
+
+//    approxInvPose = trackingState->pose_d->GetInvM();
+//    trackingState->pose_d->SetInvM(approxInvPose);
+    trackingState->pose_d->SetFrom(&mocapInv_pose);
 
     trackingState->pose_d->Coerce(); // Orthonormalization.
     approxInvPose = trackingState->pose_d->GetInvM();

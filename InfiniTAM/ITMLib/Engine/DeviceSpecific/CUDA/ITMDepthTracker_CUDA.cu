@@ -127,7 +127,8 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 	Vector4f *normalsMap, Vector4f sceneIntrinsics, Vector2i sceneImageSize, Matrix4f scenePose, Vector4f viewIntrinsics, Vector2i viewImageSize,
 	float distThresh)
 {
-	int x = threadIdx.x + blockIdx.x * blockDim.x, y = threadIdx.y + blockIdx.y * blockDim.y;
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
 
 	int locId_local = threadIdx.x + threadIdx.y * blockDim.x;
 
