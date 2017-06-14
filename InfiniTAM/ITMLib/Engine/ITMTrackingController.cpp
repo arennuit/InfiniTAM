@@ -28,7 +28,7 @@ void ITMTrackingController::Track(ITMTrackingState *trackingState, const ITMView
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMTrackingController::Prepare(ITMTrackingState *trackingState, const ITMView *view, ITMRenderState *renderState)
+void ITMTrackingController::RayTracing(ITMTrackingState *trackingState, const ITMView *view, ITMRenderState *renderState)
 {
     // Raycast for tracking and visualization.
 	if (settings->trackerType == ITMLibSettings::TRACKER_COLOR)

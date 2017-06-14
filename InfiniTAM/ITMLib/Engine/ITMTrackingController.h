@@ -32,7 +32,7 @@ namespace ITMLib
 		public:
             void PreTrack(ITMTrackingState *trackingState, const ITMView *view);
 			void Track(ITMTrackingState *trackingState, const ITMView *view);
-			void Prepare(ITMTrackingState *trackingState, const ITMView *view, ITMRenderState *renderState);
+            void RayTracing(ITMTrackingState *trackingState, const ITMView *view, ITMRenderState *renderState);
 
 			ITMTrackingController(ITMTracker *tracker, const IITMVisualisationEngine *visualisationEngine, const ITMLowLevelEngine *lowLevelEngine,
 				const ITMLibSettings *settings)
