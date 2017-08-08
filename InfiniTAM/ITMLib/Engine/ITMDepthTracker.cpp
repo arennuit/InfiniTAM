@@ -5,6 +5,7 @@
 #include "../Objects/ITMViewMocap.h"
 
 #include <unsupported/Eigen/MatrixFunctions>
+//#include "Core/EigenExtensions/EigenGeometryAndPlugins.h"
 
 #include <math.h>
 #include <iomanip>
@@ -28,14 +29,17 @@ ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackin
 		noIterationsPerLevel[levelId] = noIterationsPerLevel[levelId - 1] + 2;
 	}
 
+    // ?.
     this->distThresh = new float[noHierarchyLevels];
 	float distThreshStep = distThresh / noHierarchyLevels;
 	this->distThresh[noHierarchyLevels - 1] = distThresh;
 	for (int levelId = noHierarchyLevels - 2; levelId >= 0; levelId--)
 		this->distThresh[levelId] = this->distThresh[levelId + 1] - distThreshStep;
 
+    // ?.
 	this->lowLevelEngine = lowLevelEngine;
 
+    // .
 	this->noICPLevel = noICPRunTillLevel;
 
     // Threshold used in hasConverged().
@@ -117,11 +121,30 @@ void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bo
 
 		ORUtils::Cholesky cholA(smallHessian, 3);
 		cholA.Backsub(step, nabla);
+
+//        // DEBUG.
+//        Eigen::Matrix<float, 3, 3> eigenA;
+//        eigenA << hessian[ 0], hessian[ 1], hessian[ 2],
+//                  hessian[ 3], hessian[ 4], hessian[ 5],
+//                  hessian[ 6], hessian[ 7], hessian[ 8];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd(eigenA);
+//        std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
 	}
 	else
 	{
 		ORUtils::Cholesky cholA(hessian, 6);
 		cholA.Backsub(step, nabla);
+
+//        // DEBUG.
+//        Eigen::Matrix<float, 6, 6> eigenA;
+//        eigenA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
+//                  hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
+//                  hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
+//                  hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
+//                  hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
+//                  hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd(eigenA);
+//        std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
 	}
 }
 
