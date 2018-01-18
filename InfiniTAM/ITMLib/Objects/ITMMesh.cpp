@@ -93,6 +93,11 @@ void ITMMesh::WriteSTL(const char *fileName)
 ////////////////////////////////////////////////////////////////////////////////
 void ITMMesh::WritePCD(const char *fileName)
 {
+    // WARNING: the points stored in the PCD files are REDUNDANT. This is
+    //          because each triangle in triangleArray stores its own 3 vertices
+    //          hence if the same vertex appears in several triangles, the
+    //          data sharing or reference is not accounted for.
+
     // Ensure to have CPU memory (convert from CUDA if needed).
     ORUtils::MemoryBlock<Triangle> *cpu_triangles;
     bool shouldDelete = false;
@@ -128,9 +133,6 @@ void ITMMesh::WritePCD(const char *fileName)
     // Write the points cloud.
     // NOTE: the vertices data is appended to the header.
     fStream.open(fileName, std::ofstream::out | std::ofstream::app | std::ofstream::binary );
-
-//    float bob = 2.45f;
-//    fStream.write((char*)&bob, sizeof(bob));
 
     for (uint i = 0; i < noTotalTriangles; i++)
     {
