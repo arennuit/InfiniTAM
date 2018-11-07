@@ -36,8 +36,8 @@ message(STATUS "libpng found: ${PNG_FOUND}")
 set(CMAKE_MODULE_PATH_OLD ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH_OLD ${CMAKE_PREFIX_PATH})
 
-set(CMAKE_MODULE_PATH ../../../Dependencies/Eigen/v_master/share/eigen3/cmake)
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../../Dependencies/Eigen/v_master/)
+set(CMAKE_MODULE_PATH ../../../Dependencies/Eigen/v3.3.5/share/eigen3/cmake)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../../Dependencies/Eigen/v3.3.5/)
 find_package(Eigen3 REQUIRED)
 
 
