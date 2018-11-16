@@ -30,24 +30,39 @@ find_package(PNG QUIET)
 CANONIFY_BOOL(PNG_FOUND)
 message(STATUS "libpng found: ${PNG_FOUND}")
 
-# Eigen.
-# NOTE: for reasons we do not understand it is not possible to set
-#       CMAKE_MODULE_PATH as a relative path (although we do it in the toolkit)
-#       hence we use function get_filename_component() to transform the relative
-#       path to an absolute path.
+# Eigen & PCL.
 # NOTE: We also make sure to leave CMAKE_MODULE_PATH and CMAKE_PREFIX_PATH's
 #       value unchanged (as cmake complains about CUDA otherwise).
 set(CMAKE_MODULE_PATH_OLD ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH_OLD ${CMAKE_PREFIX_PATH})
 
-get_filename_component(LC_CMAKE_FOLDER_PATH "../CMake" ABSOLUTE)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LC_CMAKE_FOLDER_PATH})
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../Dependencies/Eigen/v3.2.0)
+set(CMAKE_MODULE_PATH ../../../Dependencies/Eigen/v3.3.5/share/eigen3/cmake)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../../Dependencies/Eigen/v3.3.5/)
 find_package(Eigen3 REQUIRED)
+
+
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../../Dependencies/pcl/v1.8.1)
+find_package(PCL 1.7 REQUIRED COMPONENTS common io filters)
+
+# The VTK library used by the PCL automatically add vtk* definitions
+# that are not compatible with nvcc. This can be solved with the code below.
+# Code is taken from https://github.com/PointCloudLibrary/pcl/issues/776
+get_directory_property(dir_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+set(vtk_flags)
+foreach(it ${dir_defs})
+    if(it MATCHES "vtk*")
+    list(APPEND vtk_flags ${it})
+    endif()
+endforeach()
+
+foreach(d ${vtk_flags})
+    remove_definitions(-D${d})
+endforeach()
+
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH_OLD})
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH_OLD})
-# End Eigen.
+# End Eigen & PCL.
 
 
 OPTION(WITH_CUDA "Build with CUDA support?" ${CUDA_FOUND})
@@ -75,8 +90,12 @@ ENDIF()
 # Use C++11.
 # NOTE: NVCC's option for C++11 needs to be specified separately (hence the 2nd
 #       line below).
+# NOTE: With the newer version of CMake used in Ubuntu 16.04, the CXX flags are
+#       passed to NVCC. This causes the compilation to faile because the c++
+#       flag is recorded twice. So the 2nd line isn't necessary anymore,
+#       it even causes the compilation to fail.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11" )
+#set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11" )
 
 ################################################################################
 # Dependencies.
