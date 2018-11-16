@@ -3,7 +3,7 @@ include_directories(${GLUT_INCLUDE_DIR})
 
 # Include eigen and extensions (from Core).
 include_directories(../../../) # This path is used to find headers from [Core] and [System].
-include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(${EIGEN_INCLUDE_DIRS})
 
 IF(WITH_CUDA)
   include_directories(${CUDA_INCLUDE_DIRS})

@@ -203,7 +203,7 @@ SOURCE_GROUP(Utils FILES ${ITMLIB_UTILS_SOURCES} ${ITMLIB_UTILS_HEADERS})
 
 # Include eigen and extensions (from Core).
 include_directories(../../../) # This path is used to find headers from [Core] and [System].
-include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(${EIGEN_INCLUDE_DIRS})
 
 if(WITH_CUDA)
   if(NOT DEFINED CUDA_COMPUTE_CAPABILITY)
