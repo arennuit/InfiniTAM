@@ -6,6 +6,10 @@ namespace InfiniTAM
 namespace Engine
 {
 
+////////////////////////////////////////////////////////////////////////////////
+MocapSourceEngine::~MocapSourceEngine()
+{
+}
 
 } // namespace Engine.
 

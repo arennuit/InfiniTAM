@@ -14,11 +14,10 @@ namespace Engine
 class MocapSourceEngine
 {
 public:
-    MocapSourceEngine() {}
-    ~MocapSourceEngine() {}
+    virtual ~MocapSourceEngine();
 
     virtual bool hasMoreMeasurements() = 0;
-    virtual void getMeasurement(Eigen::Frame& mocapFrame) = 0;
+    virtual void getMeasurement(Eigen::Framef& mocapFrame) = 0;
 };
 
 } // namespace Engine.

@@ -62,9 +62,9 @@ namespace ITMLib
 
 			virtual int ComputeGandH(float &f, float *nabla, float *hessian, Matrix4f approxInvPose) = 0;
 
-            void FrameToPose(ITMPose& pose, Eigen::Frame const& frame);
-            void PoseToFrame(Eigen::Frame& frame, ITMPose const& pose);
-            void FrameToMat(Matrix4f& mat, Eigen::Frame const& frame);
+            void FrameToPose(ITMPose& pose, Eigen::Framef const& frame);
+            void PoseToFrame(Eigen::Framef& frame, ITMPose const& pose);
+            void FrameToMat(Matrix4f& mat, Eigen::Framef const& frame);
             void PrintPose(ITMPose& pose);
 
 		public:

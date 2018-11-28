@@ -198,8 +198,8 @@ void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMV
 {
     // Compute mocap current frame with respect to init frame.
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
-    static Eigen::Frame mocap_frame_init = mocapView->m_mocapFrame;
-    Eigen::Frame mocap_frame = mocap_frame_init.getInverse() * mocapView->m_mocapFrame;
+    static Eigen::Framef mocap_frame_init = mocapView->m_mocapFrame;
+    Eigen::Framef mocap_frame = mocap_frame_init.getInverse() * mocapView->m_mocapFrame;
 
     // Convert ICL-NUIM frame convention to InfiniTAM convention.
     // NOTE: I have no idea where this conversion stems from.
@@ -209,12 +209,12 @@ void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMV
     Eigen::Vector3f mocap_rotVec_corrected(-mocap_rotVec.x(), mocap_rotVec.y(), -mocap_rotVec.z());
     Eigen::Vector3f mocap_pos_corrected(mocap_pos.x(), -mocap_pos.y(), mocap_pos.z());
 
-    Eigen::Frame mocap_frame_corrected;
+    Eigen::Framef mocap_frame_corrected;
     mocap_frame_corrected.m_quat.fromRotationVector(mocap_rotVec_corrected);
     mocap_frame_corrected.m_pos = mocap_pos_corrected;
 
     // Initialize the tracker.
-    Eigen::Frame mocap_inv_frame_corrected = mocap_frame_corrected.getInverse();
+    Eigen::Framef mocap_inv_frame_corrected = mocap_frame_corrected.getInverse();
     ITMPose mocapInv_pose;
     FrameToPose(mocapInv_pose, mocap_inv_frame_corrected);
 
@@ -300,7 +300,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::FrameToPose(ITMPose& pose, Eigen::Frame const& frame)
+void ITMDepthTracker::FrameToPose(ITMPose& pose, Eigen::Framef const& frame)
 {
     Matrix4f pose_mat;
     FrameToMat(pose_mat, frame);
@@ -309,7 +309,7 @@ void ITMDepthTracker::FrameToPose(ITMPose& pose, Eigen::Frame const& frame)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::PoseToFrame(Eigen::Frame& frame, ITMPose const& pose)
+void ITMDepthTracker::PoseToFrame(Eigen::Framef& frame, ITMPose const& pose)
 {
     Matrix4f pose_mat = pose.GetM();
     Eigen::Matrix4f frame_mat;
@@ -318,11 +318,11 @@ void ITMDepthTracker::PoseToFrame(Eigen::Frame& frame, ITMPose const& pose)
                  pose_mat.m[2], pose_mat.m[6], pose_mat.m[10], pose_mat.m[14],
                  pose_mat.m[3], pose_mat.m[7], pose_mat.m[11], pose_mat.m[15];
 
-    frame = Eigen::Frame(frame_mat);
+    frame = Eigen::Framef(frame_mat);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::FrameToMat(Matrix4f& mat, Eigen::Frame const& frame)
+void ITMDepthTracker::FrameToMat(Matrix4f& mat, Eigen::Framef const& frame)
 {
     Eigen::Matrix4f frame_mat = frame.toMatrix4();
     mat.m[0] = frame_mat(0, 0); mat.m[4] = frame_mat(0, 1); mat.m[ 8] = frame_mat(0, 2); mat.m[12] = frame_mat(0, 3);

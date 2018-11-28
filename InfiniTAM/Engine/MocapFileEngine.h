@@ -19,14 +19,14 @@ public:
     ~MocapFileEngine();
 
     bool hasMoreMeasurements();
-    void getMeasurement(Eigen::Frame& mocapFrame) {mocapFrame = m_cachedFrame;}
+    void getMeasurement(Eigen::Framef& mocapFrame) {mocapFrame = m_cachedFrame;}
 
 private:
     std::string m_mocapFilename;
 
     std::ifstream m_fileStream;
 
-    Eigen::Frame m_cachedFrame;
+    Eigen::Framef m_cachedFrame;
 
     void loadMocapIntoCache();
 };

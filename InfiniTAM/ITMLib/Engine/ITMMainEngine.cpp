@@ -120,7 +120,7 @@ void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement, Eigen::Frame *mocapMeasurement)
+void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement, Eigen::Framef *mocapMeasurement)
 {
     // Prepare raw image and turn it into a depth image.
     if (imuMeasurement != 0)

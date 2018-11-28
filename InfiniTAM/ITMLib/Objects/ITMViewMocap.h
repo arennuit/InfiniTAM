@@ -16,7 +16,7 @@ namespace Objects
 class ITMViewMocap : public ITMView
 {
 public:
-    Eigen::Frame m_mocapFrame;
+    Eigen::Framef m_mocapFrame;
 
     ITMViewMocap(const ITMRGBDCalib *calibration, Vector2i imgSize_rgb, Vector2i imgSize_d, bool useGPU)
      : ITMView(calibration, imgSize_rgb, imgSize_d, useGPU)
@@ -25,8 +25,8 @@ public:
     ~ITMViewMocap() {}
 
     // Suppress the default copy constructor and assignment operator
-    ITMViewMocap(const ITMViewMocap&);
-    ITMViewMocap& operator=(const ITMViewMocap&);
+    ITMViewMocap(const ITMViewMocap&) = delete;
+    ITMViewMocap& operator=(const ITMViewMocap&) = delete;
 };
 
 } // namespace Objects.

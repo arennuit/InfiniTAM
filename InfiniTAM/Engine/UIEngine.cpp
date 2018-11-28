@@ -411,7 +411,7 @@ void UIEngine::Initialise(int & argc, char** argv,
     inputRGBImage           = new ITMUChar4Image(imageSource->getRGBImageSize(), true, allocateGPU);
     inputRawDepthImage      = new ITMShortImage(imageSource->getDepthImageSize(), true, allocateGPU);
     inputIMUMeasurement     = new ITMIMUMeasurement();
-    m_inputMocapMeasurement = new Eigen::Frame();
+    m_inputMocapMeasurement = new Eigen::Framef();
 
 	saveImage = new ITMUChar4Image(imageSource->getDepthImageSize(), true, false);
 
