@@ -487,12 +487,14 @@ void UIEngine::ProcessFrame()
 	}
 
     // Get the new mocap reading.
+    bool mocapFrameIsValid = false;
     if (mocapSource != 0)
     {
         if (!mocapSource->hasMoreMeasurements())
             return;
 
-        mocapSource->getMeasurement(*m_inputMocapMeasurement);
+        mocapFrameIsValid = mocapSource->getMeasurement(*m_inputMocapMeasurement) == MocapSourceEngine::MEASUREMENT_OK;
+        std::clog << "MOCAP:" << mocapFrameIsValid << ' ' << *m_inputMocapMeasurement << std::endl;
     }
 
     // Recording.
@@ -515,7 +517,7 @@ void UIEngine::ProcessFrame()
 
     if (imuSource != 0)
         mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, inputIMUMeasurement);
-    else if (mocapSource != 0)
+    else if (mocapFrameIsValid)
         mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, 0, m_inputMocapMeasurement);
     else
         mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage);

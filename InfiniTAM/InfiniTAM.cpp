@@ -10,6 +10,9 @@
 #include "Engine/LibUVCEngine.h"
 #include "Engine/RealSenseEngine.h"
 
+#include "Engine/MocapFileEngine.h"
+#include "Engine/MocapViveEngine.h"
+
 using namespace InfiniTAM::Engine;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,6 +169,20 @@ static void CreateDefaultImageSource(ImageSourceEngine*& imageSource, IMUSourceE
 			imageSource = NULL;
 		}
 	}
+
+    if (!isFiles && isMocap)
+    {
+        std::cout << "Vive device motion capture source" << std::endl;
+
+        try
+        {
+            mocapSource = new MocapViveEngine();
+        }
+        catch (std::exception &e)
+        {
+            std::clog << "Impossible to connect mocap: " << e.what() << std::endl;
+        }
+    }
 
     // This is a hack to ensure backwards compatibility in certain configurations.
     if (imageSource == NULL)

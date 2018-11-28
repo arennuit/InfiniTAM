@@ -30,6 +30,10 @@ find_package(PNG QUIET)
 CANONIFY_BOOL(PNG_FOUND)
 message(STATUS "libpng found: ${PNG_FOUND}")
 
+find_package(OpenVR QUIET)
+CANONIFY_BOOL(OpenVR_FOUND)
+message(STATUS "OpenVR found: ${OPENVR_FOUND}")
+
 # Eigen & PCL.
 # NOTE: We also make sure to leave CMAKE_MODULE_PATH and CMAKE_PREFIX_PATH's
 #       value unchanged (as cmake complains about CUDA otherwise).
