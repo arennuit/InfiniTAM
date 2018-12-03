@@ -53,15 +53,15 @@ int ITMWeightedICPTracker_CPU::ComputeGandH(float &f, float *nabla, float *hessi
 		{
 		case TRACKER_ITERATION_ROTATION:
 			isValidPoint = computePerPointGH_wICP<true, true>(localNabla, localHessian, localF, localWeight, x, y, depth[x + y * viewImageSize.x], viewImageSize,
-				viewIntrinsics, sceneImageSize, sceneIntrinsics, approxInvPose, scenePose, pointsMap, normalsMap, distThresh[levelId]);
+                viewIntrinsics, sceneImageSize, sceneIntrinsics, approxInvPose, approxPose, pointsMap, normalsMap, distThresh[levelId]);
 			break;
 		case TRACKER_ITERATION_TRANSLATION:
 			isValidPoint = computePerPointGH_wICP<true, false>(localNabla, localHessian, localF, localWeight, x, y, depth[x + y * viewImageSize.x], viewImageSize,
-				viewIntrinsics, sceneImageSize, sceneIntrinsics, approxInvPose, scenePose, pointsMap, normalsMap, distThresh[levelId]);
+                viewIntrinsics, sceneImageSize, sceneIntrinsics, approxInvPose, approxPose, pointsMap, normalsMap, distThresh[levelId]);
 			break;
 		case TRACKER_ITERATION_BOTH:
 			isValidPoint = computePerPointGH_wICP<false, false>(localNabla, localHessian, localF, localWeight, x, y, depth[x + y * viewImageSize.x], viewImageSize,
-				viewIntrinsics, sceneImageSize, sceneIntrinsics, approxInvPose, scenePose, pointsMap, normalsMap, distThresh[levelId]);
+                viewIntrinsics, sceneImageSize, sceneIntrinsics, approxInvPose, approxPose, pointsMap, normalsMap, distThresh[levelId]);
 			break;
 		default:
 			isValidPoint = false;

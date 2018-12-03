@@ -26,7 +26,7 @@ struct ITMDepthTracker_KernelParameters
 	Vector4f *normalsMap;
 	Vector4f sceneIntrinsics;
 	Vector2i sceneImageSize;
-	Matrix4f scenePose;
+    Matrix4f approxPose;
 	Vector4f viewIntrinsics;
 	Vector2i viewImageSize;
 	float distThresh;
@@ -87,7 +87,7 @@ int ITMDepthTracker_CUDA::ComputeGandH(float &f, float *nabla, float *hessian, M
 	args.normalsMap = normalsMap;
 	args.sceneIntrinsics = sceneIntrinsics;
 	args.sceneImageSize = sceneImageSize;
-	args.scenePose = scenePose;
+    args.approxPose = approxPose;
 	args.viewIntrinsics = viewIntrinsics;
 	args.viewImageSize = viewImageSize;
 	args.distThresh = distThresh[levelId];
@@ -286,6 +286,6 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 template<bool shortIteration, bool rotationOnly>
 __global__ void depthTrackerOneLevel_g_rt_device(ITMDepthTracker_KernelParameters para)
 {
-	depthTrackerOneLevel_g_rt_device_main<shortIteration, rotationOnly>(para.accu, para.depth, para.approxInvPose, para.pointsMap, para.normalsMap, para.sceneIntrinsics, para.sceneImageSize, para.scenePose, para.viewIntrinsics, para.viewImageSize, para.distThresh);
+    depthTrackerOneLevel_g_rt_device_main<shortIteration, rotationOnly>(para.accu, para.depth, para.approxInvPose, para.pointsMap, para.normalsMap, para.sceneIntrinsics, para.sceneImageSize, para.approxPose, para.viewIntrinsics, para.viewImageSize, para.distThresh);
 }
 

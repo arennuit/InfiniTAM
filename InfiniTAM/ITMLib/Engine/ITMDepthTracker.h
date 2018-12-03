@@ -56,7 +56,7 @@ namespace ITMLib
 			TrackerIterationType iterationType;
 
             Matrix4f approxInvPose;
-			Matrix4f scenePose;
+            Matrix4f approxPose;
 			ITMSceneHierarchyLevel *sceneHierarchyLevel;
 			ITMTemplatedHierarchyLevel<ITMFloatImage> *viewHierarchyLevel;
 

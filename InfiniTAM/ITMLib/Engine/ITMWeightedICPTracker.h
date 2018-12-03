@@ -55,7 +55,7 @@ namespace ITMLib
 			int levelId;
 			TrackerIterationType iterationType;
 
-			Matrix4f scenePose;
+            Matrix4f approxPose;
 			ITMSceneHierarchyLevel *sceneHierarchyLevel;
 			ITMTemplatedHierarchyLevel<ITMFloatImage> *viewHierarchyLevel;
 			ITMTemplatedHierarchyLevel<ITMFloatImage> *weightHierarchyLevel;

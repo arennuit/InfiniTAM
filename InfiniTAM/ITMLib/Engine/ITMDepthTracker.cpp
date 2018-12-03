@@ -70,7 +70,7 @@ void ITMDepthTracker::SetEvaluationData(ITMTrackingState *trackingState, const I
 	sceneHierarchy->levels[0]->pointsMap = trackingState->pointCloud->locations;
     sceneHierarchy->levels[0]->normalsMap = trackingState->pointCloud->colours;
 
-//    scenePose = trackingState->pose_pointCloud->GetM();
+//    approxPose = trackingState->pose_pointCloud->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -224,7 +224,7 @@ void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMV
 
     trackingState->pose_d->Coerce(); // Orthonormalization.
     approxInvPose = trackingState->pose_d->GetInvM();
-    scenePose = trackingState->pose_d->GetM();
+    approxPose = trackingState->pose_d->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
