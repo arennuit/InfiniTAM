@@ -164,7 +164,7 @@ namespace InfiniTAM
 namespace Engine
 {
 
-MocapViveEngine::MocapViveEngine()
+MocapViveEngine::MocapViveEngine(std::vector<std::string> const& /* devicesToTrack */)
 {
   throw std::runtime_error("Compiled without OpenVR support");
 }
