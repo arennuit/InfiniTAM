@@ -129,7 +129,7 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 
     // Update view.
     ITMViewMocap* mocapView = (ITMViewMocap*)(*view_ptr);
-    mocapView->m_mocapFrame = *mocapMeasurement;
+    mocapView->m_f_tracker_mocapBase = *mocapMeasurement;
 
     this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
 }

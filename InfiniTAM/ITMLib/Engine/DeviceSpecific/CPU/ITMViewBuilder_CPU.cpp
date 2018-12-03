@@ -108,7 +108,7 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
     }
 
     ITMViewMocap* imuView = (ITMViewMocap*)(*view_ptr);
-    imuView->m_mocapFrame = *mocapMeasurement;
+    imuView->m_f_tracker_mocapBase = *mocapMeasurement;
 
     this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
 }

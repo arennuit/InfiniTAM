@@ -198,8 +198,8 @@ void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMV
 {
     // Compute mocap current frame with respect to init frame.
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
-    static Eigen::Framef mocap_frame_init = mocapView->m_mocapFrame;
-    Eigen::Framef mocap_frame = mocap_frame_init.getInverse() * mocapView->m_mocapFrame;
+    static Eigen::Framef mocap_frame_init = mocapView->m_f_tracker_mocapBase;
+    Eigen::Framef mocap_frame = mocap_frame_init.getInverse() * mocapView->m_f_tracker_mocapBase;
 
     // Convert ICL-NUIM frame convention to InfiniTAM convention.
     // NOTE: I have no idea where this conversion stems from.
