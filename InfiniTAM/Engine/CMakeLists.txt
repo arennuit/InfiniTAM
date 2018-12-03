@@ -47,6 +47,8 @@ MocapSourceEngine.cpp
 MocapSourceEngine.h
 MocapFileEngine.cpp
 MocapFileEngine.h
+MocapViveEngine.cpp
+MocapViveEngine.h
 UIEngine.cpp
 UIEngine.h
 CLIEngine.cpp
@@ -72,3 +74,8 @@ IF(WITH_REALSENSE)
   TARGET_LINK_LIBRARIES(Engine ${RealSense_LIBRARY})
 ENDIF()
 
+IF(OpenVR_FOUND)
+    TARGET_LINK_LIBRARIES(Engine OpenVR::OpenVR)
+ELSE()
+    TARGET_COMPILE_DEFINITIONS(Engine PRIVATE COMPILE_WITHOUT_OPENVR)
+ENDIF()

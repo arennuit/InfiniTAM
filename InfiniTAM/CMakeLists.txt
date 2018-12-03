@@ -30,6 +30,10 @@ find_package(PNG QUIET)
 CANONIFY_BOOL(PNG_FOUND)
 message(STATUS "libpng found: ${PNG_FOUND}")
 
+find_package(OpenVR QUIET)
+CANONIFY_BOOL(OpenVR_FOUND)
+message(STATUS "OpenVR found: ${OPENVR_FOUND}")
+
 # Eigen & PCL.
 # NOTE: We also make sure to leave CMAKE_MODULE_PATH and CMAKE_PREFIX_PATH's
 #       value unchanged (as cmake complains about CUDA otherwise).
@@ -73,7 +77,7 @@ IF(MSVC_IDE)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-DUSING_CMAKE=1)
 ELSE(MSVC_IDE)
-  set(CFLAGS_WARN "-Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing")
+  set(CFLAGS_WARN "-Wno-unused-parameter -Wno-strict-aliasing")
   set(CMAKE_CXX_FLAGS "-fPIC -O3 -march=native ${CFLAGS_WARN} ${CMAKE_CXX_FLAGS}")
   #set(CMAKE_CXX_FLAGS "-fPIC -g ${CFLAGS_WARN} ${CMAKE_CXX_FLAGS}")
 ENDIF(MSVC_IDE)

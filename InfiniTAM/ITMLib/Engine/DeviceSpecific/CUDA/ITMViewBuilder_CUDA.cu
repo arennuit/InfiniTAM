@@ -114,7 +114,7 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, Eigen::Frame* mocapMeasurement)
+void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, Eigen::Framef* mocapMeasurement)
 {
     // Create the view (if it does not exist yet).
     if (*view_ptr == NULL)
