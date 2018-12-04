@@ -10,13 +10,14 @@ set(OPEN_NI_ROOT "/usr/local" CACHE FILEPATH "Root directory of OpenNI2")
 
 # Finally the library itself
 find_library(OpenNI_LIBRARY
-NAMES OpenNI
-PATHS "${OPEN_NI_ROOT}/Lib" "C:/Program Files (x86)/OpenNI/Lib" "C:/Program Files/OpenNI/Lib" ${CMAKE_LIB_PATH}
+  NAMES OpenNI2
+  PATHS "${OPEN_NI_ROOT}"
+  PATH_SUFFIXES "Bin/x64-Release" "Lib"
 )
 
-find_path(OpenNI_INCLUDE_DIR OpenNI.h PATH "${OPEN_NI_ROOT}/Include")
-
-find_library(OpenNI_LIBRARY OpenNI2 PATH "${OPEN_NI_ROOT}/Bin/x64-Release/")
+find_path(OpenNI_INCLUDE_DIR OpenNI.h
+  PATHS "${OPEN_NI_ROOT}"
+  PATH_SUFFIXES "Include")
 
 # handle the QUIETLY and REQUIRED arguments and set JPEG_FOUND to TRUE if
 # all listed variables are TRUE
@@ -29,4 +30,3 @@ if(OPENNI_FOUND)
 endif()
 
 mark_as_advanced(OpenNI_LIBRARY OpenNI_INCLUDE_DIR)
-

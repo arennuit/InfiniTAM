@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(InfiniTAM)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 macro(CANONIFY_BOOL var)
   if (${var})
@@ -105,9 +105,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # Dependencies.
 # NOTE: this compiles Core and System specifically for the ROS package (and is
 #       redundant with the compilation of Core and System for the toolkit).
-add_subdirectory(../../Core ../build/Core)
-add_subdirectory(../../System ../build/System)
-
 add_subdirectory(ORUtils)
 add_subdirectory(ITMLib)
 add_subdirectory(Utils)
@@ -129,4 +126,3 @@ target_link_libraries(InfiniTAM_cli Utils)
 add_executable(InfiniTAM InfiniTAM.cpp)
 target_link_libraries(InfiniTAM Engine)
 target_link_libraries(InfiniTAM Utils)
-
