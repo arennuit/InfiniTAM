@@ -59,9 +59,10 @@ namespace ORUtils
 			}
 		}
 
-		// Suppress the default copy constructor and assignment operator
-		Image(const Image&);
-		Image& operator=(const Image&);
+        Image(const Image&) = default;
+        Image(Image&&) = default;
+        Image& operator=(const Image&) = default;
+        Image& operator=(Image&&) = default;
 	};
 }
 
