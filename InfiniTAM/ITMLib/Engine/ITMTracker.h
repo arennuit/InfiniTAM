@@ -20,7 +20,7 @@ namespace ITMLib
 		class ITMTracker
 		{
 		public:
-            virtual void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) {}
+            virtual void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) = 0;
 
             /** Localize a View in the given scene. The result is
 			    currently stored as an attribute in trackingState.

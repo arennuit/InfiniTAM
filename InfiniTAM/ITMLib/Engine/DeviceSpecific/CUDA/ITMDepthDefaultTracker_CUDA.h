@@ -11,17 +11,17 @@ namespace Engine
 {
 
 ////////////////////////////////////////////////////////////////////////////////
-class ITMDepthMocapTracker_CUDA : public ITMDepthTracker_CUDA
+class ITMDepthDefaultTracker_CUDA : public ITMDepthTracker_CUDA
 {
 public:
-    ITMDepthMocapTracker_CUDA( Vector2i imgSize,
+    ITMDepthDefaultTracker_CUDA( Vector2i imgSize,
                                TrackerIterationType *trackingRegime,
                                int noHierarchyLevels,
                                int noICPRunTillLevel,
                                float distThresh,
                                float terminationThreshold,
                                const ITMLowLevelEngine *lowLevelEngine );
-    ~ITMDepthMocapTracker_CUDA(void) {}
+    ~ITMDepthDefaultTracker_CUDA(void) {}
 
     void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override;
 };

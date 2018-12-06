@@ -19,7 +19,7 @@ struct ITMDepthTracker_CUDA::AccuCell
 ////////////////////////////////////////////////////////////////////////////////
 struct ITMDepthTracker_KernelParameters
 {
-	ITMDepthTracker_CUDA::AccuCell *accu;
+    ITMDepthTracker_CUDA::AccuCell *accu;
 	float *depth;
 	Matrix4f approxInvPose;
 	Vector4f *pointsMap;

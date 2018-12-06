@@ -1,6 +1,6 @@
 // Copyright 2014-2015 Isis Innovation Limited and the authors of InfiniTAM
 
-#include "ITMDepthMocapTracker_CUDA.h"
+#include "ITMDepthDefaultTracker_CUDA.h"
 
 using namespace ITMLib::Engine;
 
@@ -11,7 +11,7 @@ namespace Engine
 {
 
 ////////////////////////////////////////////////////////////////////////////////
-ITMDepthMocapTracker_CUDA::ITMDepthMocapTracker_CUDA( Vector2i imgSize,
+ITMDepthDefaultTracker_CUDA::ITMDepthDefaultTracker_CUDA( Vector2i imgSize,
                                                       TrackerIterationType *trackingRegime,
                                                       int noHierarchyLevels,
                                                       int noICPRunTillLevel,
@@ -30,9 +30,9 @@ ITMDepthMocapTracker_CUDA::ITMDepthMocapTracker_CUDA( Vector2i imgSize,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthMocapTracker_CUDA::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthDefaultTracker_CUDA::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
-    PreTrackCamera_mocap( trackingState, view );
+    PreTrackCamera_default( trackingState, view );
 }
 
 

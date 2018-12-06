@@ -11,6 +11,7 @@
 #include "ITMTracker.h"
 
 #include "DeviceSpecific/CPU/ITMColorTracker_CPU.h"
+#include "DeviceSpecific/CPU/ITMDepthDefaultTracker_CPU.h"
 #include "DeviceSpecific/CPU/ITMDepthMocapTracker_CPU.h"
 #include "DeviceSpecific/CPU/ITMDepthTracker_CPU.h"
 #include "DeviceSpecific/CPU/ITMWeightedICPTracker_CPU.h"
@@ -19,8 +20,8 @@
 
 #ifndef COMPILE_WITHOUT_CUDA
 #include "DeviceSpecific/CUDA/ITMColorTracker_CUDA.h"
+#include "DeviceSpecific/CUDA/ITMDepthDefaultTracker_CUDA.h"
 #include "DeviceSpecific/CUDA/ITMDepthMocapTracker_CUDA.h"
-#include "DeviceSpecific/CUDA/ITMDepthTracker_CUDA.h"
 #include "DeviceSpecific/CUDA/ITMWeightedICPTracker_CUDA.h"
 #include "DeviceSpecific/CUDA/ITMRenTracker_CUDA.h"
 #endif
@@ -192,7 +193,7 @@ namespace ITMLib
         {
           case ITMLibSettings::DEVICE_CPU:
           {
-            return new ITMDepthTracker_CPU(
+            return new ITMDepthDefaultTracker_CPU(
               trackedImageSize,
               settings->trackingRegime,
               settings->noHierarchyLevels,
@@ -205,7 +206,7 @@ namespace ITMLib
           case ITMLibSettings::DEVICE_CUDA:
           {
 #ifndef COMPILE_WITHOUT_CUDA
-            return new ITMDepthTracker_CUDA(
+            return new ITMDepthDefaultTracker_CUDA(
               trackedImageSize,
               settings->trackingRegime,
               settings->noHierarchyLevels,
@@ -311,7 +312,7 @@ namespace ITMLib
             ITMCompositeTracker *compositeTracker = new ITMCompositeTracker(2);
             compositeTracker->SetTracker(new ITMIMUTracker(imuCalibrator), 0);
             compositeTracker->SetTracker(
-              new ITMDepthTracker_CPU(
+              new ITMDepthDefaultTracker_CPU(
                 trackedImageSize,
                 settings->trackingRegime,
                 settings->noHierarchyLevels,
@@ -329,7 +330,7 @@ namespace ITMLib
             ITMCompositeTracker *compositeTracker = new ITMCompositeTracker(2);
             compositeTracker->SetTracker(new ITMIMUTracker(imuCalibrator), 0);
             compositeTracker->SetTracker(
-              new ITMDepthTracker_CUDA(
+              new ITMDepthDefaultTracker_CUDA(
                 trackedImageSize,
                 settings->trackingRegime,
                 settings->noHierarchyLevels,

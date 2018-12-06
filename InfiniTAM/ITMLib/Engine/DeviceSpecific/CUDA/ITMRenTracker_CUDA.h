@@ -26,6 +26,8 @@ namespace ITMLib
 				const ITMScene<TVoxel, TIndex> *scene);
 
 			~ITMRenTracker_CUDA(void);
+
+            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
 		};
 	}
 }

@@ -11,7 +11,6 @@ ITMLib.h
 SET(ITMLIB_ENGINE_SOURCES
 Engine/ITMColorTracker.cpp
 Engine/ITMDenseMapper.cpp
-Engine/ITMDepthMocapTracker.cpp
 Engine/ITMDepthTracker.cpp
 Engine/ITMWeightedICPTracker.cpp
 Engine/ITMIMUTracker.cpp
@@ -26,7 +25,6 @@ SET(ITMLIB_ENGINE_HEADERS
 Engine/ITMColorTracker.h
 Engine/ITMCompositeTracker.h
 Engine/ITMDenseMapper.h
-Engine/ITMDepthMocapTracker.h
 Engine/ITMDepthTracker.h
 Engine/ITMWeightedICPTracker.h
 Engine/ITMIMUCalibrator.h
@@ -64,6 +62,7 @@ Engine/DeviceAgnostic/ITMMeshingEngine.h
 ##
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CPU_SOURCES
 Engine/DeviceSpecific/CPU/ITMColorTracker_CPU.cpp
+Engine/DeviceSpecific/CPU/ITMDepthDefaultTracker_CPU.cpp
 Engine/DeviceSpecific/CPU/ITMDepthMocapTracker_CPU.cpp
 Engine/DeviceSpecific/CPU/ITMDepthTracker_CPU.cpp
 Engine/DeviceSpecific/CPU/ITMWeightedICPTracker_CPU.cpp
@@ -78,8 +77,9 @@ Engine/DeviceSpecific/CPU/ITMMeshingEngine_CPU.cpp
 
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CPU_HEADERS
 Engine/DeviceSpecific/CPU/ITMColorTracker_CPU.h
-Engine/DeviceSpecific/CPU/ITMDepthTracker_CPU.h
+Engine/DeviceSpecific/CPU/ITMDepthDefaultTracker_CPU.h
 Engine/DeviceSpecific/CPU/ITMDepthMocapTracker_CPU.h
+Engine/DeviceSpecific/CPU/ITMDepthTracker_CPU.h
 Engine/DeviceSpecific/CPU/ITMWeightedICPTracker_CPU.h
 Engine/DeviceSpecific/CPU/ITMLowLevelEngine_CPU.h
 Engine/DeviceSpecific/CPU/ITMRenTracker_CPU.h
@@ -93,6 +93,7 @@ Engine/DeviceSpecific/CPU/ITMMeshingEngine_CPU.h
 ##
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CUDA_SOURCES
 Engine/DeviceSpecific/CUDA/ITMColorTracker_CUDA.cu
+Engine/DeviceSpecific/CUDA/ITMDepthDefaultTracker_CUDA.cu
 Engine/DeviceSpecific/CUDA/ITMDepthMocapTracker_CUDA.cu
 Engine/DeviceSpecific/CUDA/ITMDepthTracker_CUDA.cu
 Engine/DeviceSpecific/CUDA/ITMWeightedICPTracker_CUDA.cu
@@ -108,6 +109,7 @@ Engine/DeviceSpecific/CUDA/ITMMeshingEngine_CUDA.cu
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CUDA_HEADERS
 Engine/DeviceSpecific/CUDA/ITMColorTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMCUDAUtils.h
+Engine/DeviceSpecific/CUDA/ITMDepthDefaultTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMDepthMocapTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMDepthTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMWeightedICPTracker_CUDA.h

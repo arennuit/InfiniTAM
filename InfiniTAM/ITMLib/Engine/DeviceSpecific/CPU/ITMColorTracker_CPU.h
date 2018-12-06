@@ -17,6 +17,8 @@ namespace ITMLib
 			ITMColorTracker_CPU(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels,
 				const ITMLowLevelEngine *lowLevelEngine);
 			~ITMColorTracker_CPU(void);
+
+            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
 		};
 	}
 }

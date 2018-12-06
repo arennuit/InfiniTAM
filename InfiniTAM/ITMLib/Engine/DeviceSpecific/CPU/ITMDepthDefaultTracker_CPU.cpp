@@ -1,6 +1,6 @@
 // Copyright 2014-2015 Isis Innovation Limited and the authors of InfiniTAM
 
-#include "ITMDepthMocapTracker_CPU.h"
+#include "ITMDepthDefaultTracker_CPU.h"
 
 namespace ITMLib
 {
@@ -9,7 +9,7 @@ namespace Engine
 {
 
 ////////////////////////////////////////////////////////////////////////////////
-ITMDepthMocapTracker_CPU::ITMDepthMocapTracker_CPU( Vector2i imgSize,
+ITMDepthDefaultTracker_CPU::ITMDepthDefaultTracker_CPU( Vector2i imgSize,
                                                     TrackerIterationType *trackingRegime,
                                                     int noHierarchyLevels,
                                                     int noICPRunTillLevel,
@@ -28,9 +28,9 @@ ITMDepthMocapTracker_CPU::ITMDepthMocapTracker_CPU( Vector2i imgSize,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthMocapTracker_CPU::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthDefaultTracker_CPU::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
-    PreTrackCamera_mocap( trackingState, view );
+    PreTrackCamera_default( trackingState, view );
 }
 
 } // namespace Engine.

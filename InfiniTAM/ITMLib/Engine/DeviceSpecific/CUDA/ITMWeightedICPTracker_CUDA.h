@@ -24,6 +24,7 @@ namespace ITMLib
 			ITMWeightedICPTracker_CUDA(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
 				float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine);
 			~ITMWeightedICPTracker_CUDA(void);
+            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
 		};
 	}
 }
