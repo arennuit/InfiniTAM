@@ -221,6 +221,7 @@ try
         return 0;
 	}
 
+    // Create source engines (images, imu, mocap source engines).
     std::cout << "--------- Initialising ---------" << std::endl;
     ImageSourceEngine *imageSource = 0;
     IMUSourceEngine   *imuSource   = 0;
@@ -233,9 +234,23 @@ try
 		return -1;
 	}
 
+    // Create main engine.
 	ITMLibSettings *internalSettings = new ITMLibSettings();
+    if ( mocapSource )
+        internalSettings->trackerType = ITMLibSettings::TRACKER_ICP_MOCAP;
+    else
+    {
+//        internalSettings->trackerType = ITMLibSettings::TRACKER_COLOR;
+        internalSettings->trackerType = ITMLibSettings::TRACKER_ICP;
+//        internalSettings->trackerType = ITMLibSettings::TRACKER_ICP_MOCAP;
+//        internalSettings->trackerType = ITMLibSettings::TRACKER_REN;
+//        internalSettings->trackerType = ITMLibSettings::TRACKER_IMU;
+//        internalSettings->trackerType = ITMLibSettings::TRACKER_WICP;
+    }
+
 	ITMMainEngine *mainEngine = new ITMMainEngine(internalSettings, &imageSource->calib, imageSource->getRGBImageSize(), imageSource->getDepthImageSize());
 
+    // Init and run loop.
     UIEngine::Instance()->Initialise(argc, argv, imageSource, imuSource, mocapSource, mainEngine, "./Files/Out", internalSettings->deviceType);
 	UIEngine::Instance()->Run();
 	UIEngine::Instance()->Shutdown();

@@ -10,11 +10,21 @@
 #include <math.h>
 #include <iomanip>
 
-using namespace ITMLib::Engine;
+namespace ITMLib
+{
+
+namespace Engine
+{
 
 ////////////////////////////////////////////////////////////////////////////////
-ITMDepthTracker::ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
-    float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine, MemoryDeviceType memoryType)
+ITMDepthTracker::ITMDepthTracker( Vector2i imgSize,
+                                  TrackerIterationType *trackingRegime,
+                                  int noHierarchyLevels,
+                                  int noICPRunTillLevel,
+                                  float distThresh,
+                                  float terminationThreshold,
+                                  const ITMLowLevelEngine *lowLevelEngine,
+                                  MemoryDeviceType memoryType )
 {
     // Tracking regime (rotations, translations, or both) per level.
 	viewHierarchy = new ITMImageHierarchy<ITMTemplatedHierarchyLevel<ITMFloatImage> >(imgSize, trackingRegime, noHierarchyLevels, memoryType, true);
@@ -196,32 +206,6 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 ////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
 {
-    // Compute mocap current frame with respect to init frame.
-    ITMViewMocap* mocapView = (ITMViewMocap*)view;
-    static Eigen::Framef mocap_frame_init = mocapView->m_f_tracker_mocapBase;
-    Eigen::Framef mocap_frame = mocap_frame_init.getInverse() * mocapView->m_f_tracker_mocapBase;
-
-    // Convert ICL-NUIM frame convention to InfiniTAM convention.
-    // NOTE: I have no idea where this conversion stems from.
-    Eigen::Vector3f mocap_rotVec = mocap_frame.m_quat.toRotationVector();
-    Eigen::Vector3f mocap_pos    = mocap_frame.m_pos;
-
-    Eigen::Vector3f mocap_rotVec_corrected(-mocap_rotVec.x(), mocap_rotVec.y(), -mocap_rotVec.z());
-    Eigen::Vector3f mocap_pos_corrected(mocap_pos.x(), -mocap_pos.y(), mocap_pos.z());
-
-    Eigen::Framef mocap_frame_corrected;
-    mocap_frame_corrected.m_quat.fromRotationVector(mocap_rotVec_corrected);
-    mocap_frame_corrected.m_pos = mocap_pos_corrected;
-
-    // Initialize the tracker.
-    Eigen::Framef mocap_inv_frame_corrected = mocap_frame_corrected.getInverse();
-    ITMPose mocapInv_pose;
-    FrameToPose(mocapInv_pose, mocap_inv_frame_corrected);
-
-//    approxInvPose = trackingState->pose_d->GetInvM();
-//    trackingState->pose_d->SetInvM(approxInvPose);
-    trackingState->pose_d->SetFrom(&mocapInv_pose);
-
     trackingState->pose_d->Coerce(); // Orthonormalization.
     approxInvPose = trackingState->pose_d->GetInvM();
     approxPose = trackingState->pose_d->GetM();
@@ -339,3 +323,7 @@ void ITMDepthTracker::PrintPose(ITMPose& pose)
 
     std::cout << std::setw(10) << t.x << " " << std::setw(10) << t.y << " " << std::setw(10) << t.z << " " << std::setw(10) << r.x << " " << std::setw(10) << r.y << " " << std::setw(10) << r.z << std::endl;
 }
+
+} // namespace Engine.
+
+} // namespace ITMLib

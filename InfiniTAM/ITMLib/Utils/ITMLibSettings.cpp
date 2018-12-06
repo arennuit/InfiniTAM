@@ -40,7 +40,8 @@ ITMLibSettings::ITMLibSettings(void)
 	useBilateralFilter = false;
 
 	//trackerType = TRACKER_COLOR;
-	trackerType = TRACKER_ICP;
+  	//trackerType = TRACKER_ICP;
+    trackerType = TRACKER_ICP_MOCAP;
 	//trackerType = TRACKER_REN;
 	//trackerType = TRACKER_IMU;
 	//trackerType = TRACKER_WICP;

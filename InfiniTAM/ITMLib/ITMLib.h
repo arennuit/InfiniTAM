@@ -17,6 +17,15 @@
 #include "Engine/DeviceSpecific/Metal/ITMLowLevelEngine_Metal.h"
 #endif
 
+#include "Engine/ITMDepthMocapTracker.h"
+#include "Engine/DeviceSpecific/CPU/ITMDepthMocapTracker_CPU.h"
+#ifndef COMPILE_WITHOUT_CUDA
+#include "Engine/DeviceSpecific/CUDA/ITMDepthMocapTracker_CUDA.h"
+#endif
+#ifdef COMPILE_WITH_METAL
+#include "Engine/DeviceSpecific/Metal/ITMDepthMocapTracker_Metal.h"
+#endif
+
 #include "Engine/ITMDepthTracker.h"
 #include "Engine/DeviceSpecific/CPU/ITMDepthTracker_CPU.h"
 #ifndef COMPILE_WITHOUT_CUDA

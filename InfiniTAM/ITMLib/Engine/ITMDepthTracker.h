@@ -29,7 +29,7 @@ namespace ITMLib
 		*/
 		class ITMDepthTracker : public ITMTracker
 		{
-		private:
+        protected:
 			const ITMLowLevelEngine *lowLevelEngine;
 			ITMImageHierarchy<ITMSceneHierarchyLevel> *sceneHierarchy;
 			ITMImageHierarchy<ITMTemplatedHierarchyLevel<ITMFloatImage> > *viewHierarchy;
@@ -49,7 +49,7 @@ namespace ITMLib
 			bool HasConverged(float *step) const;
 
 			void SetEvaluationData(ITMTrackingState *trackingState, const ITMView *view);
-		protected:
+
 			float *distThresh;
 
 			int levelId;

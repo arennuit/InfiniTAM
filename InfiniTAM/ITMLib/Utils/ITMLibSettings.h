@@ -33,15 +33,17 @@ namespace ITMLib
 
 			/// Tracker types
 			typedef enum {
-				//! Identifies a tracker based on colour image
+                //! Identifies a tracker based on colour image.
 				TRACKER_COLOR,
-				//! Identifies a tracker based on depth image
+                //! Identifies a tracker based on depth image.
 				TRACKER_ICP,
-				//! Identifies a tracker based on depth image (Ren et al, 2012)
+                //! Identifies a tracker based on depth image and mocap data.
+                TRACKER_ICP_MOCAP,
+                //! Identifies a tracker based on depth image (Ren et al, 2012).
 				TRACKER_REN,
-				//! Identifies a tracker based on depth image and IMU measurement
+                //! Identifies a tracker based on depth image and IMU data.
 				TRACKER_IMU,
-				//! Identifies a tracker that use weighted ICP only on depth image
+                //! Identifies a tracker that use weighted ICP only on depth image.
 				TRACKER_WICP
 			} TrackerType;
 
