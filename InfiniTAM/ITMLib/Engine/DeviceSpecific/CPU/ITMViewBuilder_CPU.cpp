@@ -107,6 +107,7 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
         this->floatImage = new ITMFloatImage(depthImage->noDims, true, false);
     }
 
+    // Update view.
     ITMViewMocap* imuView = (ITMViewMocap*)(*view_ptr);
     imuView->m_f_tracker_mocapBase = *mocapMeasurement;
 
