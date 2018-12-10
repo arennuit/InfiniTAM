@@ -22,7 +22,7 @@ MocapViveEngine::MocapViveEngine(std::vector<std::string> const& devicesToTrack)
 {
     vr::EVRInitError eError = vr::VRInitError_None;
 
-    m_vrSystem = vr::VR_Init(&eError, vr::VRApplication_Background);
+    m_vrSystem = vr::VR_Init(&eError, vr::VRApplication_Other);
 
     if (eError != vr::VRInitError_None)
     {
