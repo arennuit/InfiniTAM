@@ -34,6 +34,14 @@ namespace ITMLib
 			
 			/// Calibration information to compute depth from disparity images.
 			ITMDisparityCalib disparityCalib;
+
+            /** @brief
+                Extrinsic calibration between the tracker and the camera.
+
+                This is the camera frame expressed in the tracker frame.
+            */
+            ITMExtrinsics m_h_cam_tracker;
+
 		};
 	}
 }
