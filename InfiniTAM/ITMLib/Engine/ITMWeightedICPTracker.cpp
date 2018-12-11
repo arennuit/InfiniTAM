@@ -69,7 +69,7 @@ void ITMWeightedICPTracker::SetEvaluationData(ITMTrackingState *trackingState, c
 	sceneHierarchy->levels[0]->pointsMap = trackingState->pointCloud->locations;
 	sceneHierarchy->levels[0]->normalsMap = trackingState->pointCloud->colours;
 
-    approxPose = trackingState->pose_pointCloud->GetM();
+    scenePose = trackingState->pose_pointCloud->GetM();
 }
 
 void ITMWeightedICPTracker::PrepareForEvaluation()

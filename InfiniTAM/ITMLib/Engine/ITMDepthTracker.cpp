@@ -81,7 +81,7 @@ void ITMDepthTracker::SetEvaluationData(ITMTrackingState *trackingState, const I
 	sceneHierarchy->levels[0]->pointsMap = trackingState->pointCloud->locations;
     sceneHierarchy->levels[0]->normalsMap = trackingState->pointCloud->colours;
 
-//    approxPose = trackingState->pose_pointCloud->GetM();
+    scenePose = trackingState->pose_pointCloud->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -208,8 +208,6 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 void ITMDepthTracker::PreTrackCamera_default(ITMTrackingState *trackingState, const ITMView *view)
 {
     trackingState->pose_d->Coerce(); // Orthonormalization.
-    approxInvPose = trackingState->pose_d->GetInvM();
-    approxPose = trackingState->pose_d->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,45 +220,20 @@ void ITMDepthTracker::PreTrackCamera_mocap(ITMTrackingState *trackingState, cons
     static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
     Eigen::Framef f_cam_cam0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_tracker;
 
+    // DEBUG.
     Eigen::Vector3f r_cam_cam0 = f_cam_cam0.m_quat.toRotationVector();
-    static uint32_t i = 0;
-    std::cout << std::setw(6) << i << " : "
+    std::cout << "f_cam_cam0 : "
               << std::setw(10) << r_cam_cam0.x()       << " " << std::setw(10) << r_cam_cam0.y()       << " " << std::setw(10) << r_cam_cam0.z()       << " --- "
               << std::setw(10) << f_cam_cam0.m_pos.x() << " " << std::setw(10) << f_cam_cam0.m_pos.y() << " " << std::setw(10) << f_cam_cam0.m_pos.z() << " "
               << std::endl;
-    ++i;
-
-//    static uint32_t i = 0;
-//    std::cout << std::setw(6) << i << " : "
-//              << std::setw(10) << f_cam_cam0.m_quat.w() << std::setw(10) << f_cam_cam0.m_quat.x() << std::setw(10) << f_cam_cam0.m_quat.y() << std::setw(10) << f_cam_cam0.m_quat.z()
-//              << std::setw(10) << f_cam_cam0.m_pos.x()  << std::setw(10) << f_cam_cam0.m_pos.y()  << std::setw(10) << f_cam_cam0.m_pos.z()
-//              << std::endl;
-//    ++i;
-
-    // Convert ICL-NUIM frame convention to InfiniTAM convention.
-    // NOTE: I have no idea where this conversion stems from.
-    Eigen::Vector3f mocap_rotVec = f_cam_cam0.m_quat.toRotationVector();
-    Eigen::Vector3f mocap_pos    = f_cam_cam0.m_pos;
-
-    Eigen::Vector3f mocap_rotVec_corrected(-mocap_rotVec.x(), mocap_rotVec.y(), -mocap_rotVec.z());
-    Eigen::Vector3f mocap_pos_corrected(mocap_pos.x(), -mocap_pos.y(), mocap_pos.z());
-
-    Eigen::Framef mocap_frame_corrected;
-    mocap_frame_corrected.m_quat.fromRotationVector(mocap_rotVec_corrected);
-    mocap_frame_corrected.m_pos = mocap_pos_corrected;
+    // END DEBUG.
 
     // Initialize the tracker.
-    Eigen::Framef mocap_inv_frame_corrected = mocap_frame_corrected.getInverse();
     ITMPose mocapInv_pose;
-    FrameToPose(mocapInv_pose, mocap_inv_frame_corrected);
+    FrameToPose(mocapInv_pose, f_cam_cam0.getInverse());
 
-//    approxInvPose = trackingState->pose_d->GetInvM();
-//    trackingState->pose_d->SetInvM(approxInvPose);
     trackingState->pose_d->SetFrom(&mocapInv_pose);
-
     trackingState->pose_d->Coerce(); // Orthonormalization.
-    approxInvPose = trackingState->pose_d->GetInvM();
-    approxPose = trackingState->pose_d->GetM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -276,6 +249,8 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         this->SetEvaluationParams(levelId);
         if (iterationType == TRACKER_ITERATION_NONE)
             continue;
+
+        Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
 
         // Loop on iterations per level.
         float f_old = 1e20f;
@@ -333,6 +308,17 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
                 break;
         }
     }
+
+    // DEBUG.
+    Eigen::Framef approxInvFrame;
+    PoseToFrame( approxInvFrame, approxInvPose );
+
+    Eigen::Vector3f r_approxInvFrame = approxInvFrame.m_quat.toRotationVector();
+    std::cout << "approxInvFrame : "
+              << std::setw(10) << r_approxInvFrame.x()       << " " << std::setw(10) << r_approxInvFrame.y()       << " " << std::setw(10) << r_approxInvFrame.z()       << " --- "
+              << std::setw(10) << approxInvFrame.m_pos.x()   << " " << std::setw(10) << approxInvFrame.m_pos.y()   << " " << std::setw(10) << approxInvFrame.m_pos.z()   << " "
+              << std::endl;
+    // END DEBUG.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
