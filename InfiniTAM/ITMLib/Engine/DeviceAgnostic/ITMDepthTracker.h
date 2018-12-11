@@ -96,9 +96,9 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
 	{
 		if (rotationOnly)
 		{
-            A[0] = +s_0.z * n_0.y - s_0.y * n_0.z;
-            A[1] = -s_0.z * n_0.x + s_0.x * n_0.z;
-            A[2] = +s_0.y * n_0.x - s_0.x * n_0.y;
+            A[0] = -s_0.z * n_0.y + s_0.y * n_0.z;
+            A[1] = +s_0.z * n_0.x - s_0.x * n_0.z;
+            A[2] = -s_0.y * n_0.x + s_0.x * n_0.y;
 		}
         else
         {
@@ -109,9 +109,9 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
 	}
 	else
 	{
-        A[0] = +s_0.z * n_0.y - s_0.y * n_0.z;
-        A[1] = -s_0.z * n_0.x + s_0.x * n_0.z;
-        A[2] = +s_0.y * n_0.x - s_0.x * n_0.y;
+        A[0] = -s_0.z * n_0.y + s_0.y * n_0.z;
+        A[1] = +s_0.z * n_0.x - s_0.x * n_0.z;
+        A[2] = -s_0.y * n_0.x + s_0.x * n_0.y;
         A[3] = n_0.x;
         A[4] = n_0.y;
         A[5] = n_0.z;
