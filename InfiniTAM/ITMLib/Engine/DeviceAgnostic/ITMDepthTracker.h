@@ -17,19 +17,19 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
     if (depth <= 1e-8f)
         return false;
 
-    // Compute s (expressed in frame k^z)
+    // Compute s (expressed in frame k^(z-1)
     // NOTE: inverse pinhole model (2D -> 3D).
-    Vector4f s_kz;
+    Vector4f s_kzm1;
 
     float fx = viewIntrinsics.x;
     float fy = viewIntrinsics.y;
     float cx = viewIntrinsics.z;
     float cy = viewIntrinsics.w;
 
-    s_kz.x = depth * ((float(x) - cx) / fx);
-    s_kz.y = depth * ((float(y) - cy) / fy);
-    s_kz.z = depth;
-    s_kz.w = 1.0f;
+    s_kzm1.x = depth * ((float(x) - cx) / fx);
+    s_kzm1.y = depth * ((float(y) - cy) / fy);
+    s_kzm1.z = depth;
+    s_kzm1.w = 1.0f;
     
     // Express s in world frame.
     // NOTE: as we do not know frame k^z we approximate it by frame {k^(z-1)}.
@@ -38,7 +38,7 @@ _CPU_AND_GPU_CODE_ inline bool computePerPointGH_Depth_Ab(THREADPTR(float) *A, T
     // NOTE: approxInvPose = H_{k^(z-1)}_0.
     Vector4f s_0;
 
-    s_0 = approxInvPose * s_kz;
+    s_0 = approxInvPose * s_kzm1;
     s_0.w = 1.0f; // Enforce w = 1.
 
     // Express s in frame k-1.
