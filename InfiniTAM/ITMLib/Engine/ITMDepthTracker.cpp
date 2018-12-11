@@ -310,13 +310,14 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     }
 
     // DEBUG.
-    Eigen::Framef approxInvFrame;
-    PoseToFrame( approxInvFrame, approxInvPose );
+    Eigen::Framef trackingFrame;
+    PoseToFrame( trackingFrame, *trackingState->pose_d );
+    Eigen::Framef trackingFrame_inv = trackingFrame.getInverse();
 
-    Eigen::Vector3f r_approxInvFrame = approxInvFrame.m_quat.toRotationVector();
-    std::cout << "approxInvFrame : "
-              << std::setw(10) << r_approxInvFrame.x()       << " " << std::setw(10) << r_approxInvFrame.y()       << " " << std::setw(10) << r_approxInvFrame.z()       << " --- "
-              << std::setw(10) << approxInvFrame.m_pos.x()   << " " << std::setw(10) << approxInvFrame.m_pos.y()   << " " << std::setw(10) << approxInvFrame.m_pos.z()   << " "
+    Eigen::Vector3f r_trackingFrame_inv = trackingFrame_inv.m_quat.toRotationVector();
+    std::cout << "trackingFrame_inv : "
+              << std::setw(10) << r_trackingFrame_inv.x()       << " " << std::setw(10) << r_trackingFrame_inv.y()       << " " << std::setw(10) << r_trackingFrame_inv.z()       << " --- "
+              << std::setw(10) << trackingFrame_inv.m_pos.x()   << " " << std::setw(10) << trackingFrame_inv.m_pos.y()   << " " << std::setw(10) << trackingFrame_inv.m_pos.z()   << " "
               << std::endl;
     // END DEBUG.
 }
