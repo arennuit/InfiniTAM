@@ -28,9 +28,9 @@ ITMDepthMocapTracker_CPU::ITMDepthMocapTracker_CPU( Vector2i imgSize,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthMocapTracker_CPU::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthMocapTracker_CPU::PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
-    PreTrackCamera_mocap( trackingState, view );
+    PreTrackCamera_mocap( trackingState, view, approxInvPose );
 }
 
 } // namespace Engine.

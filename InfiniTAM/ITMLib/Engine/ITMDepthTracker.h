@@ -66,8 +66,9 @@ namespace ITMLib
             void FrameToMat(Matrix4f& mat, Eigen::Framef const& frame);
             void PrintPose(ITMPose& pose);
 
-            void PreTrackCamera_default(ITMTrackingState *trackingState, const ITMView *view);
-            void PreTrackCamera_mocap(ITMTrackingState *trackingState, const ITMView *view);
+            virtual void PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose ) = 0;
+            void PreTrackCamera_default( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose );
+            void PreTrackCamera_mocap(   ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose );
 
         public:
 			void TrackCamera(ITMTrackingState *trackingState, const ITMView *view);

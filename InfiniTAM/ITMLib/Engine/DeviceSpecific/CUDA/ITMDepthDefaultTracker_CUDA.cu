@@ -30,9 +30,9 @@ ITMDepthDefaultTracker_CUDA::ITMDepthDefaultTracker_CUDA( Vector2i imgSize,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthDefaultTracker_CUDA::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthDefaultTracker_CUDA::PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
-    PreTrackCamera_default( trackingState, view );
+    PreTrackCamera_default( trackingState, view, approxInvPose );
 }
 
 

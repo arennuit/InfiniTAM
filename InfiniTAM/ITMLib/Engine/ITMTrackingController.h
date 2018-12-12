@@ -29,8 +29,7 @@ namespace ITMLib
 
 			MemoryDeviceType memoryType;
 
-		public:
-            void PreTrack(ITMTrackingState *trackingState, const ITMView *view);
+        public:
 			void Track(ITMTrackingState *trackingState, const ITMView *view);
             void RayTracing(ITMTrackingState *trackingState, const ITMView *view, ITMRenderState *renderState);
 

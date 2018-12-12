@@ -51,9 +51,7 @@ namespace ITMLib
 
 			// Suppress the default copy constructor and assignment operator
 			ITMCompositeTracker(const ITMCompositeTracker&);
-			ITMCompositeTracker& operator=(const ITMCompositeTracker&);
-
-            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
+            ITMCompositeTracker& operator=(const ITMCompositeTracker&);
 		};
 	}
 }

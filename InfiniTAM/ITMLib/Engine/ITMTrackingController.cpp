@@ -9,14 +9,6 @@
 using namespace ITMLib::Engine;
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMTrackingController::PreTrack(ITMTrackingState *trackingState, const ITMView *view)
-{
-    // Set pose_d and approxInvPose from mocap
-    if (trackingState->age_pointCloud != -1)
-        tracker->PreTrackCamera(trackingState, view);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void ITMTrackingController::Track(ITMTrackingState *trackingState, const ITMView *view)
 {
     // Track.

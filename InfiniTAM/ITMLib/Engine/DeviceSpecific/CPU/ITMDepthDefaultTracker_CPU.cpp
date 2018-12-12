@@ -28,9 +28,9 @@ ITMDepthDefaultTracker_CPU::ITMDepthDefaultTracker_CPU( Vector2i imgSize,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthDefaultTracker_CPU::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthDefaultTracker_CPU::PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
-    PreTrackCamera_default( trackingState, view );
+    PreTrackCamera_default( trackingState, view, approxInvPose );
 }
 
 } // namespace Engine.

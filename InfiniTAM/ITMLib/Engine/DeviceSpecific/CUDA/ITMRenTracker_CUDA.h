@@ -25,9 +25,7 @@ namespace ITMLib
 			ITMRenTracker_CUDA(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, const ITMLowLevelEngine *lowLevelEngine,
 				const ITMScene<TVoxel, TIndex> *scene);
 
-			~ITMRenTracker_CUDA(void);
-
-            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
+            ~ITMRenTracker_CUDA(void);
 		};
 	}
 }

@@ -22,9 +22,7 @@ namespace ITMLib
 			ITMRenTracker_CPU(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, const ITMLowLevelEngine *lowLevelEngine,
 				const ITMScene<TVoxel, TIndex> *scene);
 
-			~ITMRenTracker_CPU(void);
-
-            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
+            ~ITMRenTracker_CPU(void);
 		};
 	}
 }

@@ -25,9 +25,7 @@ namespace ITMLib
 			void TrackCamera(ITMTrackingState *trackingState, const ITMView *view);
 
 			ITMIMUTracker(ITMIMUCalibrator *calibrator);
-			virtual ~ITMIMUTracker(void);
-
-            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
+            virtual ~ITMIMUTracker(void);
 		};
 	}
 }

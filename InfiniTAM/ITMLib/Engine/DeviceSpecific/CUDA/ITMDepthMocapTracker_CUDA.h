@@ -23,7 +23,7 @@ public:
                                const ITMLowLevelEngine *lowLevelEngine );
     ~ITMDepthMocapTracker_CUDA(void) {}
 
-    void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override;
+    void PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose ) override;
 };
 
 } // namespace Engine.

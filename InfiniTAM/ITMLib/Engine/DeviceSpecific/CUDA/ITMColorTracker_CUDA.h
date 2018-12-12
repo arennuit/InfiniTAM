@@ -20,9 +20,7 @@ namespace ITMLib
 
 			ITMColorTracker_CUDA(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels,
 				const ITMLowLevelEngine *lowLevelEngine);
-			~ITMColorTracker_CUDA(void);
-
-            void PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view) override {}
+            ~ITMColorTracker_CUDA(void);
 		};
 	}
 }

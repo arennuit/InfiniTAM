@@ -494,7 +494,7 @@ void UIEngine::ProcessFrame()
             return;
 
         mocapFrameIsValid = mocapSource->getMeasurement(*m_inputMocapMeasurement) == MocapSourceEngine::MEASUREMENT_OK;
-        std::clog << "MOCAP:" << mocapFrameIsValid << ' ' << *m_inputMocapMeasurement << std::endl;
+//        std::clog << "MOCAP:" << mocapFrameIsValid << ' ' << *m_inputMocapMeasurement << std::endl;
     }
 
     // Recording.

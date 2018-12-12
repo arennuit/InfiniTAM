@@ -205,20 +205,24 @@ void ITMDepthTracker::ApplyDelta(const Matrix4f & para_old, const float *delta, 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::PreTrackCamera_default(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthTracker::PreTrackCamera_default( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
-    trackingState->pose_d->Coerce(); // Orthonormalization.
+    approxInvPose = trackingState->pose_d->GetInvM();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::PreTrackCamera_mocap(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthTracker::PreTrackCamera_mocap(  ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
-    // Compute mocap-based estimation of f_cam_cam0.
+    // Pre-positioning: compute mocap-based estimation of f_cam_cam0.
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
     Eigen::Framef f_cam_tracker;
     PoseToFrame( f_cam_tracker, view->calib->m_h_cam_tracker.calib );
     static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
     Eigen::Framef f_cam_cam0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_tracker;
+
+    ITMPose pose_cam_cam0;
+    FrameToPose( pose_cam_cam0, f_cam_cam0 );
+    approxInvPose = pose_cam_cam0.GetM();
 
     // DEBUG.
     Eigen::Vector3f r_cam_cam0 = f_cam_cam0.m_quat.toRotationVector();
@@ -227,13 +231,6 @@ void ITMDepthTracker::PreTrackCamera_mocap(ITMTrackingState *trackingState, cons
               << std::setw(10) << f_cam_cam0.m_pos.x() << " " << std::setw(10) << f_cam_cam0.m_pos.y() << " " << std::setw(10) << f_cam_cam0.m_pos.z() << " "
               << std::endl;
     // END DEBUG.
-
-    // Initialize the tracker.
-    ITMPose mocapInv_pose;
-    FrameToPose(mocapInv_pose, f_cam_cam0.getInverse());
-
-    trackingState->pose_d->SetFrom(&mocapInv_pose);
-    trackingState->pose_d->Coerce(); // Orthonormalization.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -243,14 +240,16 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     this->SetEvaluationData(trackingState, view);
     this->PrepareForEvaluation();
 
+    // PreTrack
+    Matrix4f approxInvPose;
+    PreTrackCamera( trackingState, view, approxInvPose );
+
     // Loop on levels.
     for (int levelId = viewHierarchy->noLevels - 1; levelId >= noICPLevel; levelId--)
     {
         this->SetEvaluationParams(levelId);
         if (iterationType == TRACKER_ITERATION_NONE)
             continue;
-
-        Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
 
         // Loop on iterations per level.
         float f_old = 1e20f;

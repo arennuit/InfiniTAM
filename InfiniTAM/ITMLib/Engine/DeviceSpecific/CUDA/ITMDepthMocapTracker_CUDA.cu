@@ -30,9 +30,9 @@ ITMDepthMocapTracker_CUDA::ITMDepthMocapTracker_CUDA( Vector2i imgSize,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthMocapTracker_CUDA::PreTrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthMocapTracker_CUDA::PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
-    PreTrackCamera_mocap( trackingState, view );
+    PreTrackCamera_mocap( trackingState, view, approxInvPose );
 }
 
 

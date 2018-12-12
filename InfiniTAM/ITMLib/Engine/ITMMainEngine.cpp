@@ -137,8 +137,8 @@ void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDep
     // NOTE: the raytracing between PreTrack() and Track() is necessary because
     //       the raycast scene image depends on the camera position
     //       initialization achieved in PreTrack().
-    trackingController->PreTrack(trackingState, view);
-    trackingController->RayTracing(trackingState, view, renderState_live);
+//    trackingController->PreTrack(trackingState, view);
+//    trackingController->RayTracing(trackingState, view, renderState_live);
     trackingController->Track(trackingState, view);
 
     // Fusion.
