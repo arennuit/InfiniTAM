@@ -513,39 +513,6 @@ void UIEngine::ProcessFrame()
 //        std::clog << "MOCAP:" << mocapFrameIsValid << ' ' << *m_inputMocapMeasurement << std::endl;
     }
 
-    // Recording.
-    if ( isRecording )
-	{
-        // Depth + RGB images.
-		char str[250];
-		sprintf(str, "%s/%04d.pgm", outFolder, currentFrameNo);
-		SaveImageToFile(inputRawDepthImage, str);
-
-		if (inputRGBImage->noDims != Vector2i(0,0)) {
-			sprintf(str, "%s/%04d.ppm", outFolder, currentFrameNo);
-			SaveImageToFile(inputRGBImage, str);
-		}
-
-        // Mocap.
-        if ( mocapSource )
-        {
-            // Open the mocap file.
-            if ( isRecording_km1 == false )
-            {
-                char strMocap[250];
-                sprintf( strMocap, "%s/trackerTraj.dat", outFolder );
-                m_mocap_file.open( strMocap );
-            }
-
-            m_mocap_file << currentFrameNo + 1 << " " << m_inputMocapMeasurement->m_pos.x()  << " " << m_inputMocapMeasurement->m_pos.y()  << " " << m_inputMocapMeasurement->m_pos.z()  << " "
-                                                      << m_inputMocapMeasurement->m_quat.x() << " " << m_inputMocapMeasurement->m_quat.y() << " " << m_inputMocapMeasurement->m_quat.z() << " " << m_inputMocapMeasurement->m_quat.w() << std::endl;
-        }
-	}
-    else if ( mocapSource && isRecording_km1 == true)
-        m_mocap_file.close();
-
-    isRecording_km1 = isRecording;
-
     // Actual processing.
 	sdkResetTimer(&timer_instant);
 	sdkStartTimer(&timer_instant); sdkStartTimer(&timer_average);
@@ -562,9 +529,42 @@ void UIEngine::ProcessFrame()
 #endif
 	sdkStopTimer(&timer_instant); sdkStopTimer(&timer_average);
 
-	//processedTime = sdkGetTimerValue(&timer_instant);
-	processedTime = sdkGetAverageTimerValue(&timer_average);
+    processedTime = sdkGetAverageTimerValue(&timer_average); //processedTime = sdkGetTimerValue(&timer_instant);
 
+    // Recording.
+    if ( isRecording )
+    {
+        // Depth + RGB images.
+        char str[250];
+        sprintf(str, "%s/%04d.pgm", outFolder, currentFrameNo);
+        SaveImageToFile(inputRawDepthImage, str);
+
+        if (inputRGBImage->noDims != Vector2i(0,0)) {
+            sprintf(str, "%s/%04d.ppm", outFolder, currentFrameNo);
+            SaveImageToFile(inputRGBImage, str);
+        }
+
+        // Mocap.
+        if ( mocapSource )
+        {
+            // Open the mocap file.
+            if ( isRecording_km1 == false )
+            {
+                char strMocap[250];
+                sprintf( strMocap, "%s/trackerTraj.dat", outFolder );
+                m_mocap_file.open( strMocap );
+            }
+
+            m_mocap_file << currentFrameNo + 1 << " " << m_inputMocapMeasurement->m_pos.x()  << " " << m_inputMocapMeasurement->m_pos.y()  << " " << m_inputMocapMeasurement->m_pos.z()  << " "
+                                                      << m_inputMocapMeasurement->m_quat.x() << " " << m_inputMocapMeasurement->m_quat.y() << " " << m_inputMocapMeasurement->m_quat.z() << " " << m_inputMocapMeasurement->m_quat.w() << std::endl;
+        }
+    }
+    else if ( mocapSource && isRecording_km1 == true)
+        m_mocap_file.close();
+
+    isRecording_km1 = isRecording;
+
+    // Prepare next frame.
 	currentFrameNo++;
 }
 
