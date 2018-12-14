@@ -146,8 +146,6 @@ void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDep
         denseMapper->ProcessFrame(view, trackingState, scene, renderState_live);
 
     // Raycast to renderState_live for tracking and free visualisation.
-    // NOTE: this raytracing is for vizualization purpose only, without it the
-    //       visual rendering would always be lagging 1 frame behind.
     trackingController->RayTracing(trackingState, view, renderState_live);
 
     // Frame index.
