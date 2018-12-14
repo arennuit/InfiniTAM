@@ -66,12 +66,16 @@ namespace InfiniTAM
 			int mouseState;
 			Vector2i mouseLastClick;
 
-			int currentFrameNo; bool isRecording;
+            int currentFrameNo;
+            bool isRecording_km1;
+            bool isRecording;
 		public:
-			static UIEngine* Instance(void) {
+            static UIEngine* Instance(void) {
 				if (instance == NULL) instance = new UIEngine();
 				return instance;
 			}
+            UIEngine();
+            ~UIEngine();
 
 			static void glutDisplayFunction();
 			static void glutIdleFunction();
@@ -88,6 +92,7 @@ namespace InfiniTAM
 			char *outFolder;
 			bool needsRefresh;
 			ITMUChar4Image *saveImage;
+            std::ofstream m_mocap_file;
 
             void Initialise(int & argc, char** argv,
                             ImageSourceEngine *imageSource,

@@ -23,6 +23,21 @@ using namespace InfiniTAM::Engine;
 UIEngine* UIEngine::instance;
 
 ////////////////////////////////////////////////////////////////////////////////
+UIEngine::UIEngine() :
+    isRecording_km1(false),
+    isRecording(false)
+{
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+UIEngine::~UIEngine()
+{
+    if ( m_mocap_file.is_open() )
+        m_mocap_file.close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 static void safe_glutBitmapString(void *font, const char *str)
 {
 	size_t len = strlen(str);
@@ -382,6 +397,7 @@ void UIEngine::Initialise(int & argc, char** argv,
 	winReg[1] = Vector4f(0.665f, h2, 1.0f, 1.0f);   // Side sub window 0
 	winReg[2] = Vector4f(0.665f, h1, 1.0f, h2);     // Side sub window 2
 
+    this->isRecording_km1 = false;
 	this->isRecording = false;
 	this->currentFrameNo = 0;
 
@@ -498,10 +514,10 @@ void UIEngine::ProcessFrame()
     }
 
     // Recording.
-	if (isRecording)
+    if ( isRecording )
 	{
+        // Depth + RGB images.
 		char str[250];
-
 		sprintf(str, "%s/%04d.pgm", outFolder, currentFrameNo);
 		SaveImageToFile(inputRawDepthImage, str);
 
@@ -509,7 +525,26 @@ void UIEngine::ProcessFrame()
 			sprintf(str, "%s/%04d.ppm", outFolder, currentFrameNo);
 			SaveImageToFile(inputRGBImage, str);
 		}
+
+        // Mocap.
+        if ( mocapSource )
+        {
+            // Open the mocap file.
+            if ( isRecording_km1 == false )
+            {
+                char strMocap[250];
+                sprintf( strMocap, "%s/trackerTraj.dat", outFolder );
+                m_mocap_file.open( strMocap );
+            }
+
+            m_mocap_file << currentFrameNo + 1 << " " << m_inputMocapMeasurement->m_pos.x()  << " " << m_inputMocapMeasurement->m_pos.y()  << " " << m_inputMocapMeasurement->m_pos.z()  << " "
+                                                      << m_inputMocapMeasurement->m_quat.x() << " " << m_inputMocapMeasurement->m_quat.y() << " " << m_inputMocapMeasurement->m_quat.z() << " " << m_inputMocapMeasurement->m_quat.w() << std::endl;
+        }
 	}
+    else if ( mocapSource && isRecording_km1 == true)
+        m_mocap_file.close();
+
+    isRecording_km1 = isRecording;
 
     // Actual processing.
 	sdkResetTimer(&timer_instant);
