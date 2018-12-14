@@ -21,14 +21,14 @@ bool ITMLib::Objects::readIntrinsics(std::istream & src, ITMIntrinsics & dest)
 	dest.SetFrom(focalLength[0], focalLength[1], centerPoint[0], centerPoint[1], sizeX, sizeY);
 
     // Display.
-    std::cout << "------------------------------------------------------------------------" << std::endl;
-    std::cout << "Objects::readIntrinsics() : " << std::endl;;
-    std::cout << "sizeX : " << sizeX << std::endl;;
-    std::cout << "sizeY : " << sizeY << std::endl;;
-    std::cout << "focalLength[0] : " << focalLength[0] << std::endl;;
-    std::cout << "focalLength[1] : " << focalLength[1] << std::endl;;
-    std::cout << "centerPoint[0] : " << centerPoint[0] << std::endl;;
-    std::cout << "centerPoint[1] : " << centerPoint[1] << std::endl;;
+    std::cout << "Objects::readIntrinsics() : " << std::endl;
+    std::cout << "sizeX : " << sizeX << std::endl;
+    std::cout << "sizeY : " << sizeY << std::endl;
+    std::cout << "focalLength[0] : " << focalLength[0] << std::endl;
+    std::cout << "focalLength[1] : " << focalLength[1] << std::endl;
+    std::cout << "centerPoint[0] : " << centerPoint[0] << std::endl;
+    std::cout << "centerPoint[1] : " << centerPoint[1] << std::endl;
+    std::cout << std::endl;
 
 	return true;
 }
@@ -51,10 +51,10 @@ bool ITMLib::Objects::readExtrinsics(std::istream & src, ITMExtrinsics & dest)
 	dest.SetFrom(calib);
 
     // Display.
-    std::cout << "------------------------------------------------------------------------" << std::endl;
     std::cout << "Objects::readExtrinsics() : " << std::endl;;
     std::cout << "calib : " << std::endl;
-    std::cout << calib << std::endl;;
+    std::cout << calib << std::endl;
+    std::cout << std::endl;
 
 	return true;
 }
@@ -103,10 +103,10 @@ bool ITMLib::Objects::readDisparityCalib(std::istream & src, ITMDisparityCalib &
 	dest.SetFrom(a, b, type);
 
     // Display.
-    std::cout << "------------------------------------------------------------------------" << std::endl;
     std::cout << "Objects::readDisparityCalib() : " << std::endl;;
     std::cout << "   a: " << a << std::endl;
     std::cout << "   b: " << b << std::endl;
+    std::cout << std::endl;
 
 	return true;
 }
@@ -119,6 +119,10 @@ bool ITMLib::Objects::readDisparityCalib(const char *fileName, ITMDisparityCalib
 
 bool ITMLib::Objects::readRGBDCalib(std::istream & src, ITMRGBDCalib & dest)
 {
+    // Display.
+    std::cout << "------------------------------------------------------------------------" << std::endl;
+
+    // Actually read calib.
     if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_rgb)) return false;
     if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_d)) return false;
     if (!ITMLib::Objects::readExtrinsics(src, dest.trafo_rgb_to_depth)) return false;
@@ -135,6 +139,9 @@ bool ITMLib::Objects::readRGBDCalib(const char *fileName, ITMRGBDCalib & dest)
 
 bool ITMLib::Objects::readRGBDCalib(const char *rgbIntrinsicsFile, const char *depthIntrinsicsFile, const char *disparityCalibFile, const char *extrinsicsFile, const char *camInTrackerFile, ITMRGBDCalib & dest)
 {
+    // Display.
+    std::cout << "------------------------------------------------------------------------" << std::endl;
+
 	bool ret = true;
 	ret &= ITMLib::Objects::readIntrinsics(rgbIntrinsicsFile, dest.intrinsics_rgb);
 	ret &= ITMLib::Objects::readIntrinsics(depthIntrinsicsFile, dest.intrinsics_d);

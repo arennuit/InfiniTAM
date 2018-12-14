@@ -237,7 +237,12 @@ try
     // Create main engine.
 	ITMLibSettings *internalSettings = new ITMLibSettings();
     if ( mocapSource )
+    {
         internalSettings->trackerType = ITMLibSettings::TRACKER_ICP_MOCAP;
+        std::cout << "-------------------------------------------" << std::endl;
+        std::cout << "Using TRACKER_ICP_MOCAP" << std::endl;
+        std::cout << "-------------------------------------------" << std::endl;
+    }
     else
     {
 //        internalSettings->trackerType = ITMLibSettings::TRACKER_COLOR;
@@ -246,6 +251,10 @@ try
 //        internalSettings->trackerType = ITMLibSettings::TRACKER_REN;
 //        internalSettings->trackerType = ITMLibSettings::TRACKER_IMU;
 //        internalSettings->trackerType = ITMLibSettings::TRACKER_WICP;
+
+        std::cout << "-------------------------------------------" << std::endl;
+        std::cout << "Using TRACKER_ICP" << std::endl;
+        std::cout << "-------------------------------------------" << std::endl;
     }
 
 	ITMMainEngine *mainEngine = new ITMMainEngine(internalSettings, &imageSource->calib, imageSource->getRGBImageSize(), imageSource->getDepthImageSize());
