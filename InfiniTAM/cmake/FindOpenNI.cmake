@@ -12,7 +12,7 @@ set(OPEN_NI_ROOT "/usr/local" CACHE FILEPATH "Root directory of OpenNI2")
 find_library(OpenNI_LIBRARY
   NAMES OpenNI2
   PATHS "${OPEN_NI_ROOT}"
-  PATH_SUFFIXES "Bin/x64-Release" "Lib"
+  PATH_SUFFIXES "Bin/x64-Release" "Lib" "Redist"
 )
 
 find_path(OpenNI_INCLUDE_DIR OpenNI.h
