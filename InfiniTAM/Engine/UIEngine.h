@@ -69,6 +69,9 @@ namespace InfiniTAM
             int currentFrameNo;
             bool isRecording_km1;
             bool isRecording;
+
+        protected:
+            void PoseToFrame( Eigen::Framef& frame, ITMPose const& pose );
 		public:
             static UIEngine* Instance(void) {
 				if (instance == NULL) instance = new UIEngine();
@@ -92,6 +95,7 @@ namespace InfiniTAM
 			char *outFolder;
 			bool needsRefresh;
 			ITMUChar4Image *saveImage;
+            std::ofstream m_trackingState_file;
             std::ofstream m_mocap_file;
 
             void Initialise(int & argc, char** argv,

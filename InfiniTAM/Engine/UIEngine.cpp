@@ -33,6 +33,9 @@ UIEngine::UIEngine() :
 ////////////////////////////////////////////////////////////////////////////////
 UIEngine::~UIEngine()
 {
+    if ( m_trackingState_file.is_open() )
+        m_trackingState_file.close();
+
     if ( m_mocap_file.is_open() )
         m_mocap_file.close();
 }
@@ -544,6 +547,22 @@ void UIEngine::ProcessFrame()
             SaveImageToFile(inputRGBImage, str);
         }
 
+        // Tracking state.
+        if ( isRecording_km1 == false )
+        {
+            char strTracking[250];
+            sprintf( strTracking, "%s/trackingState.dat", outFolder );
+            m_trackingState_file.open( strTracking );
+        }
+
+        ITMLib::Objects::ITMTrackingState *trackingState = mainEngine->GetTrackingState();
+        ITMPose pos_d_inv( trackingState->pose_d->GetInvM() );
+        Eigen::Framef f_cam_cam0;
+        PoseToFrame( f_cam_cam0, pos_d_inv );
+
+        m_trackingState_file << currentFrameNo + 1 << " " << f_cam_cam0.m_pos.x()  << " " << f_cam_cam0.m_pos.y()  << " " << f_cam_cam0.m_pos.z() << " "
+                                                          << f_cam_cam0.m_quat.x() << " " << f_cam_cam0.m_quat.y() << " " << f_cam_cam0.m_quat.z() << " " << f_cam_cam0.m_quat.w() << std::endl;
+
         // Mocap.
         if ( mocapSource )
         {
@@ -551,16 +570,26 @@ void UIEngine::ProcessFrame()
             if ( isRecording_km1 == false )
             {
                 char strMocap[250];
-                sprintf( strMocap, "%s/trackerTraj.dat", outFolder );
+                sprintf( strMocap, "%s/viveTraj.dat", outFolder );
                 m_mocap_file.open( strMocap );
             }
 
-            m_mocap_file << currentFrameNo + 1 << " " << m_inputMocapMeasurement->m_pos.x()  << " " << m_inputMocapMeasurement->m_pos.y()  << " " << m_inputMocapMeasurement->m_pos.z()  << " "
-                                                      << m_inputMocapMeasurement->m_quat.x() << " " << m_inputMocapMeasurement->m_quat.y() << " " << m_inputMocapMeasurement->m_quat.z() << " " << m_inputMocapMeasurement->m_quat.w() << std::endl;
+            static Eigen::Framef f_mocap0_base = *m_inputMocapMeasurement;
+            Eigen::Framef        f_mocap_base  = *m_inputMocapMeasurement;
+            Eigen::Framef        f_mocap_mocap0 = f_mocap0_base.getInverse() * f_mocap_base;
+            m_mocap_file << currentFrameNo + 1 << " " << f_mocap_mocap0.m_pos.x()  << " " << f_mocap_mocap0.m_pos.y()  << " " << f_mocap_mocap0.m_pos.z() << " "
+                                                      << f_mocap_mocap0.m_quat.x() << " " << f_mocap_mocap0.m_quat.y() << " " << f_mocap_mocap0.m_quat.z() << " " << f_mocap_mocap0.m_quat.w() << std::endl;
         }
     }
-    else if ( mocapSource && isRecording_km1 == true)
-        m_mocap_file.close();
+    else if ( isRecording_km1 == true)
+    {
+        // Tracking state.
+        m_trackingState_file.close();
+
+        // Mocap.
+        if ( mocapSource )
+            m_mocap_file.close();
+    }
 
     isRecording_km1 = isRecording;
 
@@ -592,4 +621,17 @@ void UIEngine::Shutdown()
 	delete saveImage;
 	delete instance;
 	instance = NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void UIEngine::PoseToFrame(Eigen::Framef& frame, ITMPose const& pose)
+{
+    Matrix4f pose_mat = pose.GetM();
+    Eigen::Matrix4f frame_mat;
+    frame_mat << pose_mat.m[0], pose_mat.m[4], pose_mat.m[ 8], pose_mat.m[12],
+                 pose_mat.m[1], pose_mat.m[5], pose_mat.m[ 9], pose_mat.m[13],
+                 pose_mat.m[2], pose_mat.m[6], pose_mat.m[10], pose_mat.m[14],
+                 pose_mat.m[3], pose_mat.m[7], pose_mat.m[11], pose_mat.m[15];
+
+    frame = Eigen::Framef(frame_mat);
 }
