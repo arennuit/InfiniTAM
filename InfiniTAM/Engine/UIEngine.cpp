@@ -184,12 +184,14 @@ void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 	case 's':
 		if (uiEngine->isRecording)
 		{
-			printf("stopped recoding disk ...\n");
+            printf("-------------------------------------------------------\n");
+            printf("stopped recording disk ...\n");
 			uiEngine->isRecording = false;
 		}
 		else
 		{
-			printf("started recoding disk ...\n");
+            printf("-------------------------------------------------------\n");
+            printf("started recording disk ...\n");
 			uiEngine->currentFrameNo = 0;
 			uiEngine->isRecording = true;
 		}
