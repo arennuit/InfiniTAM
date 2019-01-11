@@ -34,8 +34,13 @@ bool MocapFileEngine::hasMoreMeasurements()
     Eigen::Vector3f r_tracker_base = f_tracker_base.m_quat.toRotationVector();
     Eigen::Vector3f p_tracker_base = f_tracker_base.m_pos;
 
-    Eigen::Vector3f r_tracker_base_corrected( -r_tracker_base.x(),  r_tracker_base.y(), -r_tracker_base.z() );
-    Eigen::Vector3f p_tracker_base_corrected(  p_tracker_base.x(), -p_tracker_base.y(),  p_tracker_base.z() );
+    // Default format.
+    Eigen::Vector3f r_tracker_base_corrected( r_tracker_base.x(), r_tracker_base.y(), r_tracker_base.z() );
+    Eigen::Vector3f p_tracker_base_corrected( p_tracker_base.x(), p_tracker_base.y(), p_tracker_base.z() );
+
+//    // ICL-NUIM format.
+//    Eigen::Vector3f r_tracker_base_corrected( -r_tracker_base.x(),  r_tracker_base.y(), -r_tracker_base.z() );
+//    Eigen::Vector3f p_tracker_base_corrected(  p_tracker_base.x(), -p_tracker_base.y(),  p_tracker_base.z() );
 
     m_cachedFrame.m_quat.fromRotationVector(r_tracker_base_corrected);
     m_cachedFrame.m_pos = p_tracker_base_corrected;
