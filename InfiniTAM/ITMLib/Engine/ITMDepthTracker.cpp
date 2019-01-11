@@ -136,12 +136,47 @@ void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bo
         // Solve.
 		ORUtils::Cholesky cholA(smallHessian, 3);
 		cholA.Backsub(step, nabla);
+
+//        // Compute the SVD.
+//        Eigen::Matrix<float, 3, 3> AtA;
+//        AtA << smallHessian[ 0], smallHessian[ 1], smallHessian[ 2],
+//               smallHessian[ 3], smallHessian[ 4], smallHessian[ 5],
+//               smallHessian[ 6], smallHessian[ 7], smallHessian[ 8];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+//        std::cout << "---------" << std::endl;
+//        std::cout << "Iteration type : " << iterationType << std::endl;
+//        Eigen::Matrix<float, 3, 1> sv = svd.singularValues();
+//        float divider = sv(0);
+//        for ( uint i = 0; i < sv.rows(); ++i)
+//            sv(i) /= divider;
+//        std::cout << "Its singular values are:" << std::endl << sv << std::endl;
+//        std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+//        std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 	}
 	else
 	{
         // Solve.
 		ORUtils::Cholesky cholA(hessian, 6);
 		cholA.Backsub(step, nabla);
+
+//        // Compute the 6x6 SVD.
+//        Eigen::Matrix<float, 6, 6> AtA;
+//        AtA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
+//               hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
+//               hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
+//               hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
+//               hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
+//               hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+//        std::cout << "---------" << std::endl;
+//        std::cout << "Iteration type : " << iterationType << std::endl;
+//        Eigen::Matrix<float, 6, 1> sv = svd.singularValues();
+//        float divider = sv(0);
+//        for ( uint i = 0; i < sv.rows(); ++i)
+//            sv(i) /= divider;
+//        std::cout << "Its singular values are:" << std::endl << sv << std::endl;
+//        std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+//        std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 	}
 }
 
@@ -296,6 +331,78 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
                 break;
         }
     }
+
+//    // Decompose space into useful and useless components using an SVD.
+//    if ( iterationType != TRACKER_ITERATION_BOTH )
+//    {
+//        // Convert the 6x6 hessian into a 3x3 hessian.
+//        float smallHessian[3 * 3];
+//        for (int r = 0; r < 3; r++)
+//            for (int c = 0; c < 3; c++)
+//                smallHessian[r + c * 3] = hessian[r + c * 6];
+
+//        // Compute the SVD.
+//        Eigen::Matrix<float, 3, 3> AtA;
+//        AtA << smallHessian[ 0], smallHessian[ 1], smallHessian[ 2],
+//               smallHessian[ 3], smallHessian[ 4], smallHessian[ 5],
+//               smallHessian[ 6], smallHessian[ 7], smallHessian[ 8];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+//        std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+//        std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+//        std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+//    }
+//    else
+//    {
+//        // Compute the SVD on rotations.
+//        Eigen::Matrix<float, 3, 3> AtA_rot;
+//        AtA_rot << hessian[ 0], hessian[ 1], hessian[ 2],
+//                   hessian[ 6], hessian[ 7], hessian[ 8],
+//                   hessian[12], hessian[13], hessian[14];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd_rot( AtA_rot, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+//        std::cout << "ROTATIONS" << std::endl;
+//        Eigen::Matrix<float, 3, 1> sv_rot = svd_rot.singularValues();
+//        float divider_rot = sv_rot(0);
+//        for ( uint i = 0; i < sv_rot.rows(); ++i)
+//            sv_rot(i) /= divider_rot;
+//        std::cout << "Its singular values are:" << std::endl << sv_rot << std::endl;
+//        std::cout << "Its Matrix U is:" << std::endl << svd_rot.matrixU() << std::endl;
+//        std::cout << "Its Matrix V is:" << std::endl << svd_rot.matrixV() << std::endl;
+//        std::cout << std::endl;
+
+//        // Compute the SVD on translations.
+//        Eigen::Matrix<float, 3, 3> AtA_trans;
+//        AtA_trans << hessian[21], hessian[22], hessian[23],
+//                     hessian[27], hessian[28], hessian[29],
+//                     hessian[33], hessian[34], hessian[35];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd_trans( AtA_trans, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+//        std::cout << "TRANSLATIONS" << std::endl;
+//        Eigen::Matrix<float, 3, 1> sv_trans = svd_trans.singularValues();
+//        float divider_trans = sv_trans(0);
+//        for ( uint i = 0; i < sv_trans.rows(); ++i)
+//            sv_trans(i) /= divider_trans;
+//        std::cout << "Its singular values are:" << std::endl << sv_trans << std::endl;
+//        std::cout << "Its Matrix U is:" << std::endl << svd_trans.matrixU() << std::endl;
+//        std::cout << "Its Matrix V is:" << std::endl << svd_trans.matrixV() << std::endl;
+//        std::cout << std::endl;
+
+//        // Compute the 6x6 SVD.
+//        Eigen::Matrix<float, 6, 6> AtA;
+//        AtA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
+//               hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
+//               hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
+//               hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
+//               hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
+//               hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
+//        Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd_both( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+//        std::cout << "BOTH" << std::endl;
+//        Eigen::Matrix<float, 6, 1> sv_both = svd_both.singularValues();
+//        float divider_both = sv_both(0);
+//        for ( uint i = 0; i < sv_both.rows(); ++i)
+//            sv_both(i) /= divider_both;
+//        std::cout << "Its singular values are:" << std::endl << sv_both << std::endl;
+//        std::cout << "Its Matrix U is:" << std::endl << svd_both.matrixU() << std::endl;
+//        std::cout << "Its Matrix V is:" << std::endl << svd_both.matrixV() << std::endl;
+//    }
 
     // DEBUG.
     Eigen::Framef trackingFrame;
