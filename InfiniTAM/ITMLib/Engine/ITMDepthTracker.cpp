@@ -127,35 +127,21 @@ void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bo
 
 	if (shortIteration)
 	{
+        // Convert the 6x6 hessian into a 3x3 hessian.
 		float smallHessian[3 * 3];
-		for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) smallHessian[r + c * 3] = hessian[r + c * 6];
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                smallHessian[r + c * 3] = hessian[r + c * 6];
 
+        // Solve.
 		ORUtils::Cholesky cholA(smallHessian, 3);
 		cholA.Backsub(step, nabla);
-
-//        // DEBUG.
-//        Eigen::Matrix<float, 3, 3> eigenA;
-//        eigenA << hessian[ 0], hessian[ 1], hessian[ 2],
-//                  hessian[ 3], hessian[ 4], hessian[ 5],
-//                  hessian[ 6], hessian[ 7], hessian[ 8];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd(eigenA);
-//        std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
 	}
 	else
 	{
+        // Solve.
 		ORUtils::Cholesky cholA(hessian, 6);
 		cholA.Backsub(step, nabla);
-
-//        // DEBUG.
-//        Eigen::Matrix<float, 6, 6> eigenA;
-//        eigenA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
-//                  hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
-//                  hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
-//                  hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
-//                  hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
-//                  hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd(eigenA);
-//        std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
 	}
 }
 
@@ -271,7 +257,10 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
 //                lambda *= 10.0f;
 
-                std::cout << "   " << std::setw(2) << levelId << std::setw(7) << iterNo << " !!!!!!!!!!!!!!!!!!!! ERROR INCREASED. validPointsNum : " << validPointsNum << " f_old: " << f_old << " f_new: " << f_new << " !!!!!!!!!!!!!!!!!!!!" << std::endl;
+                // Cout ill-conditioning: error increased.
+                std::cout << "\033[1;31m";
+                std::cout << "\n   " << std::setw(2) << levelId << std::setw(7) << iterNo << " !!!!!!!!!!!!!!!!!!!! ERROR INCREASED. validPointsNum : " << validPointsNum << " f_old: " << f_old << " f_new: " << f_new << " !!!!!!!!!!!!!!!!!!!!";
+                std::cout << "\033[0m\n";
 
                 // HACK.
                 if (trackingState->m_frameIdx == 0)
@@ -314,6 +303,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     Eigen::Framef trackingFrame_inv = trackingFrame.getInverse();
 
     Eigen::Vector3f r_trackingFrame_inv = trackingFrame_inv.m_quat.toRotationVector();
+    std::cout << "-------------" << std::endl;
     std::cout << "trackingFrame_inv : "
               << std::setw(10) << r_trackingFrame_inv.x()       << " " << std::setw(10) << r_trackingFrame_inv.y()       << " " << std::setw(10) << r_trackingFrame_inv.z()       << " --- "
               << std::setw(10) << trackingFrame_inv.m_pos.x()   << " " << std::setw(10) << trackingFrame_inv.m_pos.y()   << " " << std::setw(10) << trackingFrame_inv.m_pos.z()   << " "

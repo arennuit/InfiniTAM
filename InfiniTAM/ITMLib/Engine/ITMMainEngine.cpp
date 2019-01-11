@@ -122,6 +122,9 @@ void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
 ////////////////////////////////////////////////////////////////////////////////
 void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement, Eigen::Framef *mocapMeasurement)
 {
+    // DEBUG.
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+
     // Prepare raw image and turn it into a depth image.
     if (imuMeasurement != 0)
         viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, imuMeasurement);
