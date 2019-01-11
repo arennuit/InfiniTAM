@@ -16,4 +16,4 @@ build/
 build_old/
 CMakeLists.txt.user
 
-Files/Out*
+Files/*_Out_*
