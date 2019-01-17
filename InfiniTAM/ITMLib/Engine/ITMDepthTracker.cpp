@@ -321,7 +321,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             // NOTE: if so revert and do not update hessian_norm.
             if ( (validPointsNum <= 0) || (f_new > f_old) )
             {
-                // Revert and stop iterating at the current level.
+                // Revert.
 //                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
 //                approxInvPose = trackingState->pose_d->GetInvM();
 
