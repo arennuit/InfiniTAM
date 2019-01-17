@@ -309,7 +309,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         std::cout << "---------" << std::endl;
 
         // Loop on iterations per level.
-//        ITMPose lastKnownGoodPose( *(trackingState->pose_d) );
+        ITMPose lastKnownGoodPose( *(trackingState->pose_d) );
         float f_old = 1e20f;
         float lambda = 1.0;
         for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
@@ -317,13 +317,14 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             // Evaluate gradients and error function.
             int validPointsNum = this->ComputeGandH(f_new, nabla_raw, hessian_raw, approxInvPose);
 
-            // Check if error increased.
-            // NOTE: if so revert and do not update hessian_norm.
+            // Check if the update increased the error.
+            // NOTE: it is actually the update of the last loop which
+            //       is checked (not the one at the current loop).
             if ( (validPointsNum <= 0) || (f_new > f_old) )
             {
                 // Revert.
-//                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
-//                approxInvPose = trackingState->pose_d->GetInvM();
+                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
+                approxInvPose = trackingState->pose_d->GetInvM();
 
                 // Increase damping.
                 // NOTE : We are likely close to a singularity of the hessian.
@@ -341,7 +342,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
             else
             {
                 // Get ready for next step.
-//                lastKnownGoodPose.SetFrom( trackingState->pose_d );
+                lastKnownGoodPose.SetFrom( trackingState->pose_d );
                 f_old = f_new;
 
                 // Normalize the hessian and gradient.
