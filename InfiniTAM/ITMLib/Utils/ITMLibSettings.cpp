@@ -68,7 +68,7 @@ ITMLibSettings::ITMLibSettings(void)
 
 		trackingRegime[0] = TRACKER_ITERATION_BOTH;
 		trackingRegime[1] = TRACKER_ITERATION_BOTH;
-		trackingRegime[2] = TRACKER_ITERATION_ROTATION;
+        trackingRegime[2] = TRACKER_ITERATION_ROTATION; // TRACKER_ITERATION_TRANSLATION;
 		trackingRegime[3] = TRACKER_ITERATION_ROTATION;
 		trackingRegime[4] = TRACKER_ITERATION_ROTATION;
 	}
