@@ -289,61 +289,85 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     Matrix4f approxInvPose;
     PreTrackCamera( trackingState, view, approxInvPose );
 
+    trackingState->pose_d->SetInvM(approxInvPose);
+    trackingState->pose_d->Coerce(); // Orthonormalization.
+    approxInvPose = trackingState->pose_d->GetInvM();
+
     // Loop on levels.
+    float f_new;
+    float hessian_raw[6 * 6];
+    float hessian_norm[6 * 6];
+    float hessian_damp[6 * 6];
+    float nabla_raw[6];
+    float nabla_norm[6];
     for (int levelId = viewHierarchy->noLevels - 1; levelId >= noICPLevel; levelId--)
     {
         this->SetEvaluationParams(levelId);
         if (iterationType == TRACKER_ITERATION_NONE)
             continue;
 
+        std::cout << "---------" << std::endl;
+
         // Loop on iterations per level.
+//        ITMPose lastKnownGoodPose( *(trackingState->pose_d) );
         float f_old = 1e20f;
+        float lambda = 1.0;
         for (int iterNo = 0; iterNo < noIterationsPerLevel[levelId]; iterNo++)
         {
-            // Evaluate error function and gradients.
-            float f_new;
-            float hessian[6 * 6];
-            float nabla[6];
+            // Evaluate gradients and error function.
+            int validPointsNum = this->ComputeGandH(f_new, nabla_raw, hessian_raw, approxInvPose);
 
-            int validPointsNum = this->ComputeGandH(f_new, nabla, hessian, approxInvPose);
-
-            // Check if error decreased.
-            if ((validPointsNum <= 0) || (f_new > f_old))
+            // Check if error increased.
+            // NOTE: if so revert and do not update hessian_norm.
+            if ( (validPointsNum <= 0) || (f_new > f_old) )
             {
                 // Revert and stop iterating at the current level.
 //                trackingState->pose_d->SetFrom(&lastKnownGoodPose);
 //                approxInvPose = trackingState->pose_d->GetInvM();
 
-//                lambda *= 10.0f;
+                // Increase damping.
+                // NOTE : We are likely close to a singularity of the hessian.
+                lambda *= 10.0f;
 
                 // Cout ill-conditioning: error increased.
                 std::cout << "\033[1;31m";
                 std::cout << "\n   " << std::setw(2) << levelId << std::setw(7) << iterNo << " !!!!!!!!!!!!!!!!!!!! ERROR INCREASED. validPointsNum : " << validPointsNum << " f_old: " << f_old << " f_new: " << f_new << " !!!!!!!!!!!!!!!!!!!!";
                 std::cout << "\033[0m\n";
 
-                // HACK.
+                // HACK - Antoine Rennuit.
                 if (trackingState->m_frameIdx == 0)
                     break;
             }
+            else
+            {
+                // Get ready for next step.
+//                lastKnownGoodPose.SetFrom( trackingState->pose_d );
+                f_old = f_new;
 
-//            lastKnownGoodPose.SetFrom(trackingState->pose_d);
+                // Normalize the hessian and gradient.
+                // NOTE: normalization according to the number of points evaluted.
+                for (int i = 0; i < 6*6; ++i)
+                    hessian_norm[i] = hessian_raw[i] / validPointsNum;
+                for (int i = 0; i < 6; ++i)
+                    nabla_norm[i] = nabla_raw[i] / validPointsNum;
 
-            f_old = f_new;
+                // Lower damping.
+                // NOTE : we are likely away from any singularity of the hessian.
+                lambda /= 10.0f;
+            }
 
-//            for (int i = 0; i < 6*6; ++i) hessian_good[i] = hessian_new[i] / noValidPoints_new;
-//            for (int i = 0; i < 6; ++i) nabla_good[i] = nabla_new[i] / noValidPoints_new;
-
-//            lambda /= 10.0f;
-
-//            // DEBUG: no need to damp the hessian for inversion, as we now do an SVD.
-//            for (int i = 0; i < 6*6; ++i) A[i] = hessian_good[i];
-//            for (int i = 0; i < 6; ++i) A[i+i*6] *= 1.0f + lambda;
+            // Damp the hessian.
+            // NOTE: this should be no longer needed when the SVD is used.
+            for (int i = 0; i < 6*6; ++i)
+                hessian_damp[i] = hessian_norm[i];
+            for (int i = 0; i < 6; ++i)
+                hessian_damp[i+i*6] *= 1.0f + lambda;
 
             // Compute the new camera frame.
             // NOTE: the result is orthonormalized (to make sure it belongs to SE3).
             float step[6];
 
-            ComputeDelta(step, nabla, hessian, iterationType != TRACKER_ITERATION_BOTH);
+            ComputeDelta(step, nabla_norm, hessian_damp, iterationType != TRACKER_ITERATION_BOTH);
             ApplyDelta(approxInvPose, step, approxInvPose);
 
             trackingState->pose_d->SetInvM(approxInvPose);
