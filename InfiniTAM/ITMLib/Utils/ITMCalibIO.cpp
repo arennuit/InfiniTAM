@@ -127,7 +127,7 @@ bool ITMLib::Objects::readRGBDCalib(std::istream & src, ITMRGBDCalib & dest)
     if (!ITMLib::Objects::readIntrinsics(src, dest.intrinsics_d)) return false;
     if (!ITMLib::Objects::readExtrinsics(src, dest.trafo_rgb_to_depth)) return false;
     if (!ITMLib::Objects::readDisparityCalib(src, dest.disparityCalib)) return false;
-    if (!ITMLib::Objects::readExtrinsics(src, dest.m_h_cam_tracker)) return false;
+    if (!ITMLib::Objects::readExtrinsics(src, dest.m_h_cam_beacon)) return false;
 	return true;
 }
 
@@ -147,7 +147,7 @@ bool ITMLib::Objects::readRGBDCalib(const char *rgbIntrinsicsFile, const char *d
 	ret &= ITMLib::Objects::readIntrinsics(depthIntrinsicsFile, dest.intrinsics_d);
 	ret &= ITMLib::Objects::readExtrinsics(extrinsicsFile, dest.trafo_rgb_to_depth);
 	ret &= ITMLib::Objects::readDisparityCalib(disparityCalibFile, dest.disparityCalib);
-    ret &= ITMLib::Objects::readExtrinsics(camInTrackerFile, dest.m_h_cam_tracker);
+    ret &= ITMLib::Objects::readExtrinsics(camInTrackerFile, dest.m_h_cam_beacon);
 	return ret;
 }
 

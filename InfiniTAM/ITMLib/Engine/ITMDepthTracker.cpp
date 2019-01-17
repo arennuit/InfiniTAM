@@ -232,26 +232,50 @@ void ITMDepthTracker::PreTrackCamera_default( ITMTrackingState *trackingState, c
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::PreTrackCamera_mocap(  ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
+void ITMDepthTracker::PreTrackCamera_mocap( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose )
 {
+//    //////////////////////////////////
+//    // Offset approach
+
+//    // Init approxInvPose.
+//    approxInvPose = trackingState->pose_d->GetInvM();
+
+//    // Compute offset f_cam_cam_km1_fromVive from the vive.
+//    ITMViewMocap* mocapView = (ITMViewMocap*)view;
+//    Eigen::Framef f_cam_vive;
+//    PoseToFrame( f_cam_vive, view->calib->m_h_cam_beacon.calib );
+//    static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_vive;
+//    Eigen::Framef f_cam_cam0_fromVive = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_vive;
+//    static Eigen::Framef f_cam_km1_cam0_fromVive = f_cam_cam0_fromVive;
+//    Eigen::Framef f_cam_cam_km1_fromVive = f_cam_km1_cam0_fromVive.getInverse() * f_cam_cam0_fromVive;
+
+//    // Apply offset f_cam_cam_km1_fromVive.
+//    ITMPose pose_cam_km1_cam0( approxInvPose );
+//    Eigen::Framef f_cam_km1_cam0;
+//    PoseToFrame( f_cam_km1_cam0, pose_cam_km1_cam0 );
+//    Eigen::Framef f_cam_cam0 = f_cam_km1_cam0 * f_cam_cam_km1_fromVive;
+//    ITMPose pose_cam_cam0;
+//    FrameToPose( pose_cam_cam0, f_cam_cam0 );
+//    approxInvPose = pose_cam_cam0.GetM();
+
+//    f_cam_km1_cam0_fromVive = f_cam_cam0_fromVive;
+
+    //////////////////////////////////
+    // Global approach
+
+    // Init approxInvPose.
+    approxInvPose = trackingState->pose_d->GetInvM();
+
     // Pre-positioning: compute mocap-based estimation of f_cam_cam0.
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
     Eigen::Framef f_cam_tracker;
-    PoseToFrame( f_cam_tracker, view->calib->m_h_cam_tracker.calib );
+    PoseToFrame( f_cam_tracker, view->calib->m_h_cam_beacon.calib );
     static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
     Eigen::Framef f_cam_cam0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_tracker;
 
     ITMPose pose_cam_cam0;
     FrameToPose( pose_cam_cam0, f_cam_cam0 );
     approxInvPose = pose_cam_cam0.GetM();
-
-    // DEBUG.
-    Eigen::Vector3f r_cam_cam0 = f_cam_cam0.m_quat.toRotationVector();
-    std::cout << "f_cam_cam0 : "
-              << std::setw(10) << r_cam_cam0.x()       << " " << std::setw(10) << r_cam_cam0.y()       << " " << std::setw(10) << r_cam_cam0.z()       << " --- "
-              << std::setw(10) << f_cam_cam0.m_pos.x() << " " << std::setw(10) << f_cam_cam0.m_pos.y() << " " << std::setw(10) << f_cam_cam0.m_pos.z() << " "
-              << std::endl;
-    // END DEBUG.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -403,19 +427,6 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 //        std::cout << "Its Matrix U is:" << std::endl << svd_both.matrixU() << std::endl;
 //        std::cout << "Its Matrix V is:" << std::endl << svd_both.matrixV() << std::endl;
 //    }
-
-    // DEBUG.
-    Eigen::Framef trackingFrame;
-    PoseToFrame( trackingFrame, *trackingState->pose_d );
-    Eigen::Framef trackingFrame_inv = trackingFrame.getInverse();
-
-    Eigen::Vector3f r_trackingFrame_inv = trackingFrame_inv.m_quat.toRotationVector();
-    std::cout << "-------------" << std::endl;
-    std::cout << "trackingFrame_inv : "
-              << std::setw(10) << r_trackingFrame_inv.x()       << " " << std::setw(10) << r_trackingFrame_inv.y()       << " " << std::setw(10) << r_trackingFrame_inv.z()       << " --- "
-              << std::setw(10) << trackingFrame_inv.m_pos.x()   << " " << std::setw(10) << trackingFrame_inv.m_pos.y()   << " " << std::setw(10) << trackingFrame_inv.m_pos.z()   << " "
-              << std::endl;
-    // END DEBUG.
 }
 
 ////////////////////////////////////////////////////////////////////////////////

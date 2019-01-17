@@ -40,7 +40,7 @@ namespace ITMLib
 
                 This is the camera frame expressed in the tracker frame.
             */
-            ITMExtrinsics m_h_cam_tracker;
+            ITMExtrinsics m_h_cam_beacon;
 
 		};
 	}
