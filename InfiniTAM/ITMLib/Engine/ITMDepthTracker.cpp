@@ -269,12 +269,11 @@ void ITMDepthTracker::PreTrackCamera_mocap( ITMTrackingState *trackingState, con
     // Pre-positioning: compute mocap-based estimation of f_cam_cam0.
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
     Eigen::Framef f_cam_tracker;
-    PoseToFrame( f_cam_tracker, view->calib->m_h_cam_beacon.calib );
+    f_cam_tracker = PoseToFrame( view->calib->m_h_cam_beacon.calib );
     static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
     Eigen::Framef f_cam_cam0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_tracker;
 
-    ITMPose pose_cam_cam0;
-    FrameToPose( pose_cam_cam0, f_cam_cam0 );
+    ITMPose pose_cam_cam0 = FrameToPose( f_cam_cam0 );
     approxInvPose = pose_cam_cam0.GetM();
 }
 
@@ -455,39 +454,44 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::FrameToPose(ITMPose& pose, Eigen::Framef const& frame)
+ITMPose ITMDepthTracker::FrameToPose( Eigen::Framef const& frame )
 {
-    Matrix4f pose_mat;
-    FrameToMat(pose_mat, frame);
-
-    pose.SetM(pose_mat);
+    return ITMPose( FrameToMat( frame ) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::PoseToFrame(Eigen::Framef& frame, ITMPose const& pose)
+Eigen::Framef ITMDepthTracker::PoseToFrame( ITMPose const& pose )
 {
-    Matrix4f pose_mat = pose.GetM();
-    Eigen::Matrix4f frame_mat;
-    frame_mat << pose_mat.m[0], pose_mat.m[4], pose_mat.m[ 8], pose_mat.m[12],
-                 pose_mat.m[1], pose_mat.m[5], pose_mat.m[ 9], pose_mat.m[13],
-                 pose_mat.m[2], pose_mat.m[6], pose_mat.m[10], pose_mat.m[14],
-                 pose_mat.m[3], pose_mat.m[7], pose_mat.m[11], pose_mat.m[15];
-
-    frame = Eigen::Framef(frame_mat);
+    return MatToFrame( pose.GetM() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::FrameToMat(Matrix4f& mat, Eigen::Framef const& frame)
+Matrix4f ITMDepthTracker::FrameToMat( Eigen::Framef const& frame )
 {
+    Matrix4f mat;
     Eigen::Matrix4f frame_mat = frame.toMatrix4();
     mat.m[0] = frame_mat(0, 0); mat.m[4] = frame_mat(0, 1); mat.m[ 8] = frame_mat(0, 2); mat.m[12] = frame_mat(0, 3);
     mat.m[1] = frame_mat(1, 0), mat.m[5] = frame_mat(1, 1), mat.m[ 9] = frame_mat(1, 2), mat.m[13] = frame_mat(1, 3),
     mat.m[2] = frame_mat(2, 0), mat.m[6] = frame_mat(2, 1), mat.m[10] = frame_mat(2, 2), mat.m[14] = frame_mat(2, 3),
     mat.m[3] = frame_mat(3, 0), mat.m[7] = frame_mat(3, 1), mat.m[11] = frame_mat(3, 2), mat.m[15] = frame_mat(3, 3);
+
+    return mat;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::PrintPose(ITMPose& pose)
+Eigen::Framef ITMDepthTracker::MatToFrame( Matrix4f const& mat )
+{
+    Eigen::Matrix4f frame_mat;
+    frame_mat << mat.m[0], mat.m[4], mat.m[ 8], mat.m[12],
+                 mat.m[1], mat.m[5], mat.m[ 9], mat.m[13],
+                 mat.m[2], mat.m[6], mat.m[10], mat.m[14],
+                 mat.m[3], mat.m[7], mat.m[11], mat.m[15];
+
+    return Eigen::Framef( frame_mat );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::PrintPose( ITMPose& pose )
 {
     Vector3f t, r;
     pose.GetParams(t, r);
