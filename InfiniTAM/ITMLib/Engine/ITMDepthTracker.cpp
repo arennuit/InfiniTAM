@@ -284,8 +284,8 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     this->SetEvaluationData(trackingState, view);
     this->PrepareForEvaluation();
 
-    // PreTrack
-    Matrix4f approxInvPose;
+    // PreTrack.
+    Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
     PreTrackCamera( trackingState, view, approxInvPose );
 
     trackingState->pose_d->SetInvM(approxInvPose);
@@ -382,35 +382,30 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         }
     }
 
+    // Space decomposition: translations.
     Eigen::Matrix<float, 3, 3> U;
     Eigen::Matrix<float, 3, 1> S;
     Eigen::Matrix<float, 3, 3> V;
     computeSVD_3T( hessian_raw, U, S, V );
 
-    Eigen::Framef f_kpre_cam0 = MatToFrame( approxInvPose_beforeICP );
     Eigen::Framef f_icp_cam0 = MatToFrame( approxInvPose );
-
-    Eigen::Framef f_icp_kpre = f_kpre_cam0.getInverse() * f_icp_cam0;
-
     Eigen::Framef f_V_cam0( V );
-    f_V_cam0.m_quat.normalize(); // The mat3 -> quat conversion in Eigen needs to be normalized.
-    Eigen::Framef f_kpre_V = f_V_cam0.getInverse() * f_kpre_cam0;
+    f_V_cam0.m_quat.normalize();
 
-    Eigen::Vector3f posOffset_inV = f_kpre_V.m_quat * f_icp_kpre.m_pos;
+    Eigen::Framef f_icp_V = f_V_cam0.getInverse() * f_icp_cam0;
 
-    Eigen::Vector3f correctedPosOffset_inV = posOffset_inV;
+    Eigen::Framef f_kp_cam0 = MatToFrame( approxInvPose_beforeICP );
+    Eigen::Framef f_kp_V = f_V_cam0.getInverse() * f_kp_cam0;
+
+    Eigen::Framef f_corrected_V = f_icp_V;
     if ( S(0) / S(1) > 10.0f )
-        correctedPosOffset_inV(1) = 0.0f;
+        f_corrected_V.m_pos(1) = f_kp_V.m_pos(1);
     if ( S(0) / S(2) > 10.0f )
-        correctedPosOffset_inV(2) = 0.0f;
+        f_corrected_V.m_pos(2) = f_kp_V.m_pos(2);
 
-    Eigen::Vector3f correctedPosOffset_inKpre = f_kpre_V.m_quat.conjugate() * correctedPosOffset_inV;
+    Eigen::Framef f_corrected_cam0 = f_V_cam0 * f_corrected_V;
 
-    Eigen::Framef correctedOffset_inKpre = f_icp_kpre;
-    correctedOffset_inKpre.m_pos = correctedPosOffset_inKpre;
-    Eigen::Framef corrected_f_cam_cam0 = f_kpre_cam0 * correctedOffset_inKpre;
-
-    approxInvPose = FrameToMat( corrected_f_cam_cam0 );
+    approxInvPose = FrameToMat( f_corrected_cam0 );
 
     trackingState->pose_d->SetInvM(approxInvPose);
     trackingState->pose_d->Coerce(); // Orthonormalization.
@@ -424,16 +419,18 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         std::cout << "Component 1" << std::endl;
     if ( S(0) / S(2) > 10.0f )
         std::cout << "Component 2" << std::endl;
-    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
-    {
-        std::cout << "\n   " << f_icp_kpre.m_pos << std::endl;
-        std::cout << "\n   " << posOffset_inV << std::endl;
-        std::cout << "\n   " << correctedPosOffset_inV << std::endl;
-        std::cout << "\n   " << correctedPosOffset_inKpre << std::endl;
-    }
+//    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
+//    {
+//        std::cout << "\n   " << f_icp_kpre.m_pos << std::endl;
+//        std::cout << "\n   " << posOffset_inV << std::endl;
+//        std::cout << "\n   " << correctedPosOffset_inV << std::endl;
+//        std::cout << "\n   " << correctedPosOffset_inKpre << std::endl;
+//    }
     std::cout << "\033[0m\n";
     ++i;
     // END DEBUG.
+
+    // Space decomposition: rotations.
 
 
 
