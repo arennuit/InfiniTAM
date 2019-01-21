@@ -293,6 +293,8 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     approxInvPose = trackingState->pose_d->GetInvM();
 
     // Loop on levels.
+    Matrix4f approxInvPose_beforeICP = approxInvPose;
+
     float f_new;
     float hessian_raw[6 * 6];
     float hessian_norm[6 * 6];
@@ -380,6 +382,61 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         }
     }
 
+    Eigen::Matrix<float, 3, 3> U;
+    Eigen::Matrix<float, 3, 1> S;
+    Eigen::Matrix<float, 3, 3> V;
+    computeSVD_3T( hessian_raw, U, S, V );
+
+    Eigen::Framef f_kpre_cam0 = MatToFrame( approxInvPose_beforeICP );
+    Eigen::Framef f_icp_cam0 = MatToFrame( approxInvPose );
+
+    Eigen::Framef f_icp_kpre = f_kpre_cam0.getInverse() * f_icp_cam0;
+
+    Eigen::Framef f_V_cam0( V );
+    f_V_cam0.m_quat.normalize(); // The mat3 -> quat conversion in Eigen needs to be normalized.
+    Eigen::Framef f_kpre_V = f_V_cam0.getInverse() * f_kpre_cam0;
+
+    Eigen::Vector3f posOffset_inV = f_kpre_V.m_quat * f_icp_kpre.m_pos;
+
+    Eigen::Vector3f correctedPosOffset_inV = posOffset_inV;
+    if ( S(0) / S(1) > 10.0f )
+        correctedPosOffset_inV(1) = 0.0f;
+    if ( S(0) / S(2) > 10.0f )
+        correctedPosOffset_inV(2) = 0.0f;
+
+    Eigen::Vector3f correctedPosOffset_inKpre = f_kpre_V.m_quat.conjugate() * correctedPosOffset_inV;
+
+    Eigen::Framef correctedOffset_inKpre = f_icp_kpre;
+    correctedOffset_inKpre.m_pos = correctedPosOffset_inKpre;
+    Eigen::Framef corrected_f_cam_cam0 = f_kpre_cam0 * correctedOffset_inKpre;
+
+    approxInvPose = FrameToMat( corrected_f_cam_cam0 );
+
+    trackingState->pose_d->SetInvM(approxInvPose);
+    trackingState->pose_d->Coerce(); // Orthonormalization.
+    approxInvPose = trackingState->pose_d->GetInvM();
+
+    // DEBUG.
+    static int i = 0;
+    std::cout << "idx : " << i << std::endl;
+    std::cout << "\033[1;31m";
+    if ( S(0) / S(1) > 10.0f )
+        std::cout << "Component 1" << std::endl;
+    if ( S(0) / S(2) > 10.0f )
+        std::cout << "Component 2" << std::endl;
+    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
+    {
+        std::cout << "\n   " << f_icp_kpre.m_pos << std::endl;
+        std::cout << "\n   " << posOffset_inV << std::endl;
+        std::cout << "\n   " << correctedPosOffset_inV << std::endl;
+        std::cout << "\n   " << correctedPosOffset_inKpre << std::endl;
+    }
+    std::cout << "\033[0m\n";
+    ++i;
+    // END DEBUG.
+
+
+
 //    // Decompose space into useful and useless components using an SVD.
 //    if ( iterationType != TRACKER_ITERATION_BOTH )
 //    {
@@ -451,6 +508,75 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 //        std::cout << "Its Matrix U is:" << std::endl << svd_both.matrixU() << std::endl;
 //        std::cout << "Its Matrix V is:" << std::endl << svd_both.matrixV() << std::endl;
 //    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::computeSVD_3R( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V )
+{
+    // Compute the SVD.
+    // NOTE: we only use the 3x3 top-left block of the 6x6 hessian.
+    Eigen::Matrix<float, 3, 3> AtA;
+    AtA << hessian[ 0], hessian[ 1], hessian[ 2],
+           hessian[ 6], hessian[ 7], hessian[ 8],
+           hessian[12], hessian[13], hessian[14];
+    Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+
+    // Output.
+    U = svd.matrixU();
+    S = svd.singularValues();
+    V = svd.matrixV();
+
+    // DEBUG : display.
+    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::computeSVD_3T( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V )
+{
+    // Compute the SVD.
+    // NOTE: we only use the 3x3 top-left block of the 6x6 hessian.
+    Eigen::Matrix<float, 3, 3> AtA;
+    AtA << hessian[21], hessian[22], hessian[23],
+           hessian[27], hessian[28], hessian[29],
+           hessian[33], hessian[34], hessian[35];
+    Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+
+    // Output.
+    U = svd.matrixU();
+    S = svd.singularValues();
+    V = svd.matrixV();
+
+    // DEBUG : display.
+    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::computeSVD_6( float const * hessian, Eigen::Matrix<float, 6, 6>& U, Eigen::Matrix<float, 6, 1>& S, Eigen::Matrix<float, 6, 6>& V )
+{
+    // Compute the SVD.
+    // NOTE: we only use the 3x3 top-left block of the 6x6 hessian.
+    Eigen::Matrix<float, 6, 6> AtA;
+    AtA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
+           hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
+           hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
+           hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
+           hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
+           hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
+    Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
+
+    // Output.
+    U = svd.matrixU();
+    S = svd.singularValues();
+    V = svd.matrixV();
+
+    // DEBUG : display.
+    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

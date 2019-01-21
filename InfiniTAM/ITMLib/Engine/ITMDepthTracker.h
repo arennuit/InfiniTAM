@@ -67,6 +67,10 @@ namespace ITMLib
             Eigen::Framef MatToFrame( Matrix4f const& mat );
             void PrintPose( ITMPose& pose );
 
+            void computeSVD_3R( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V );
+            void computeSVD_3T( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V );
+            void computeSVD_6(  float const * hessian, Eigen::Matrix<float, 6, 6>& U, Eigen::Matrix<float, 6, 1>& S, Eigen::Matrix<float, 6, 6>& V );
+
             virtual void PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose ) = 0;
             void PreTrackCamera_default( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose );
             void PreTrackCamera_mocap(   ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose );
