@@ -286,14 +286,23 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
     // PreTrack.
     Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
-    PreTrackCamera( trackingState, view, approxInvPose );
+//    PreTrackCamera( trackingState, view, approxInvPose );
 
-    trackingState->pose_d->SetInvM(approxInvPose);
-    trackingState->pose_d->Coerce(); // Orthonormalization.
-    approxInvPose = trackingState->pose_d->GetInvM();
+//    trackingState->pose_d->SetInvM(approxInvPose);
+//    trackingState->pose_d->Coerce(); // Orthonormalization.
+//    approxInvPose = trackingState->pose_d->GetInvM();
 
-    // Loop on levels.
-    Matrix4f approxInvPose_beforeICP = approxInvPose;
+//    // Loop on levels.
+//    Matrix4f approxInvPose_beforeICP = approxInvPose;
+    ITMViewMocap* mocapView = (ITMViewMocap*)view;
+    Eigen::Framef f_cam_tracker;
+    f_cam_tracker = PoseToFrame( view->calib->m_h_cam_beacon.calib );
+    static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
+    Eigen::Framef f_kp_cam0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_tracker;
+
+
+
+
 
     float f_new;
     float hessian_raw[6 * 6];
@@ -394,7 +403,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
     Eigen::Framef f_icp_V = f_V_cam0.getInverse() * f_icp_cam0;
 
-    Eigen::Framef f_kp_cam0 = MatToFrame( approxInvPose_beforeICP );
+//    Eigen::Framef f_kp_cam0 = MatToFrame( approxInvPose_beforeICP );
     Eigen::Framef f_kp_V = f_V_cam0.getInverse() * f_kp_cam0;
 
     Eigen::Framef f_corrected_V = f_icp_V;

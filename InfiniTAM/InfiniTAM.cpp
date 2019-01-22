@@ -239,7 +239,7 @@ try
     if ( mocapSource )
     {
         internalSettings->trackerType = ITMLibSettings::TRACKER_ICP_MOCAP;
-        internalSettings->noHierarchyLevels = 1; // Overwrite noHierarchyLevels (only use 1 level) if mocap pre-conditioning is used.
+//        internalSettings->noHierarchyLevels = 1; // Overwrite noHierarchyLevels (only use 1 level) if mocap pre-conditioning is used.
         std::cout << "-------------------------------------------" << std::endl;
         std::cout << "Using TRACKER_ICP_MOCAP" << std::endl;
         std::cout << "-------------------------------------------" << std::endl;
