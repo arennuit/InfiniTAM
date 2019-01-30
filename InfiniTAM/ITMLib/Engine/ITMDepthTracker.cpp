@@ -286,6 +286,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
     // PreTrack.
     Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
+    Matrix4f mat_km1_0 = approxInvPose;
 //    PreTrackCamera( trackingState, view, approxInvPose );
 
 //    trackingState->pose_d->SetInvM(approxInvPose);
@@ -294,14 +295,15 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
 //    // Loop on levels.
 //    Matrix4f approxInvPose_beforeICP = approxInvPose;
+
+
     ITMViewMocap* mocapView = (ITMViewMocap*)view;
     Eigen::Framef f_cam_tracker;
     f_cam_tracker = PoseToFrame( view->calib->m_h_cam_beacon.calib );
     static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
-    Eigen::Framef f_kp_cam0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase * f_cam_tracker;
+    Eigen::Framef f_bK_0    = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase    * f_cam_tracker;
 
-
-
+    Eigen::Framef f_bKm1_0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_trackerKm1_mocapBase * f_cam_tracker;
 
 
     float f_new;
@@ -394,27 +396,36 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     // Space decomposition: translations.
     Eigen::Matrix<float, 3, 3> U;
     Eigen::Matrix<float, 3, 1> S;
-    Eigen::Matrix<float, 3, 3> V;
-    computeSVD_3T( hessian_raw, U, S, V );
+    Eigen::Matrix<float, 3, 3> V_raw;
+    computeSVD_3T( hessian_raw, U, S, V_raw );
 
-    Eigen::Framef f_icp_cam0 = MatToFrame( approxInvPose );
-    Eigen::Framef f_V_cam0( V );
-    f_V_cam0.m_quat.normalize();
+    Eigen::Framef f_km1_0 = MatToFrame( mat_km1_0 );
+    Eigen::Framef f_icp_0 = MatToFrame( approxInvPose );
 
-    Eigen::Framef f_icp_V = f_V_cam0.getInverse() * f_icp_cam0;
+    Eigen::Matrix<float, 3, 3> V = V_raw;
+    if ( V_raw.determinant() < 0.0f )
+        V.col(0) = -V_raw.col(0); // Make sure V is a direct basis.
 
-//    Eigen::Framef f_kp_cam0 = MatToFrame( approxInvPose_beforeICP );
-    Eigen::Framef f_kp_V = f_V_cam0.getInverse() * f_kp_cam0;
+    Eigen::Quaternionf q_V_0( V );
+    q_V_0.normalize(); // mat3 -> quat conversion in Eigen needs to be normalized.
 
-    Eigen::Framef f_corrected_V = f_icp_V;
+    Eigen::Vector3f v_icp_km1_0 = f_icp_0.m_pos - f_km1_0.m_pos;
+    Eigen::Vector3f v_bK_bKm1_0 = f_bK_0.m_pos - f_bKm1_0.m_pos;
+
+    Eigen::Vector3f v_icp_km1_V = q_V_0.conjugate() * v_icp_km1_0;
+    Eigen::Vector3f v_bK_bKm1_V = q_V_0.conjugate() * v_bK_bKm1_0;
+
+    Eigen::Vector3f v_k_km1_V = v_icp_km1_V;
     if ( S(0) / S(1) > 10.0f )
-        f_corrected_V.m_pos(1) = f_kp_V.m_pos(1);
+        v_k_km1_V(1) = v_bK_bKm1_V(1);
     if ( S(0) / S(2) > 10.0f )
-        f_corrected_V.m_pos(2) = f_kp_V.m_pos(2);
+        v_k_km1_V(2) = v_bK_bKm1_V(2);
 
-    Eigen::Framef f_corrected_cam0 = f_V_cam0 * f_corrected_V;
+    Eigen::Vector3f v_k_km1_0 = q_V_0 * v_k_km1_V;
 
-    approxInvPose = FrameToMat( f_corrected_cam0 );
+    Eigen::Framef f_k_0 = Eigen::Framef( f_icp_0.m_quat, f_km1_0.m_pos + v_k_km1_0 );
+
+    approxInvPose = FrameToMat( f_k_0 );
 
     trackingState->pose_d->SetInvM(approxInvPose);
     trackingState->pose_d->Coerce(); // Orthonormalization.
@@ -428,13 +439,16 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         std::cout << "Component 1" << std::endl;
     if ( S(0) / S(2) > 10.0f )
         std::cout << "Component 2" << std::endl;
-//    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
-//    {
-//        std::cout << "\n   " << f_icp_kpre.m_pos << std::endl;
-//        std::cout << "\n   " << posOffset_inV << std::endl;
-//        std::cout << "\n   " << correctedPosOffset_inV << std::endl;
-//        std::cout << "\n   " << correctedPosOffset_inKpre << std::endl;
-//    }
+    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
+    {
+        std::cout << "\n   " << "v_icp_km1_0 : " << std::endl << v_icp_km1_0 << std::endl;
+        std::cout << "\n   " << "v_bK_bKm1_0 : " << std::endl << v_bK_bKm1_0 << std::endl;
+        std::cout << "\n   " << "v_icp_km1_V : " << std::endl << v_icp_km1_V << std::endl;
+        std::cout << "\n   " << "v_bK_bKm1_V : " << std::endl << v_bK_bKm1_V << std::endl;
+        std::cout << "\n   " << "v_k_km1_V : "   << std::endl << v_k_km1_V   << std::endl;
+        std::cout << "\n   " << "v_k_km1_0 : "   << std::endl << v_k_km1_0   << std::endl;
+        std::cout << "\n   " << "f_k_0.m_pos : " << std::endl << f_k_0.m_pos << std::endl;
+    }
     std::cout << "\033[0m\n";
     ++i;
     // END DEBUG.
@@ -514,6 +528,8 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 //        std::cout << "Its Matrix U is:" << std::endl << svd_both.matrixU() << std::endl;
 //        std::cout << "Its Matrix V is:" << std::endl << svd_both.matrixV() << std::endl;
 //    }
+
+    f_bKm1_0 = f_bK_0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

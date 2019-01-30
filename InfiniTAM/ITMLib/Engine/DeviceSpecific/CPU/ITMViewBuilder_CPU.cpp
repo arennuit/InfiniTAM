@@ -108,8 +108,20 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
     }
 
     // Update view.
-    ITMViewMocap* imuView = (ITMViewMocap*)(*view_ptr);
-    imuView->m_f_tracker_mocapBase = *mocapMeasurement;
+    ITMViewMocap* mocapView = (ITMViewMocap*)(*view_ptr);
+
+    static bool isFirst = true;
+    if ( isFirst == true )
+    {
+        isFirst = false;
+        mocapView->m_f_tracker_mocapBase = *mocapMeasurement;
+        mocapView->m_f_trackerKm1_mocapBase = mocapView->m_f_tracker_mocapBase;
+    }
+    else
+    {
+        mocapView->m_f_trackerKm1_mocapBase = mocapView->m_f_tracker_mocapBase;
+        mocapView->m_f_tracker_mocapBase = *mocapMeasurement;
+    }
 
     this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
 }

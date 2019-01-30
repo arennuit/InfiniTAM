@@ -17,6 +17,7 @@ class ITMViewMocap : public ITMView
 {
 public:
     Eigen::Framef m_f_tracker_mocapBase;
+    Eigen::Framef m_f_trackerKm1_mocapBase;
 
     ITMViewMocap(const ITMRGBDCalib *calibration, Vector2i imgSize_rgb, Vector2i imgSize_d, bool useGPU)
      : ITMView(calibration, imgSize_rgb, imgSize_d, useGPU)
