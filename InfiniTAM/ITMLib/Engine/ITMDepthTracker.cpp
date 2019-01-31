@@ -533,7 +533,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::computeSVD_3R( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V )
+void ITMDepthTracker::computeSVD_3R( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V ) const
 {
     // Compute the SVD.
     // NOTE: we only use the 3x3 top-left block of the 6x6 hessian.
@@ -555,7 +555,7 @@ void ITMDepthTracker::computeSVD_3R( float const * hessian, Eigen::Matrix<float,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::computeSVD_3T( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V )
+void ITMDepthTracker::computeSVD_3T( float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V ) const
 {
     // Compute the SVD.
     // NOTE: we only use the 3x3 top-left block of the 6x6 hessian.
@@ -577,7 +577,13 @@ void ITMDepthTracker::computeSVD_3T( float const * hessian, Eigen::Matrix<float,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::computeSVD_6( float const * hessian, Eigen::Matrix<float, 6, 6>& U, Eigen::Matrix<float, 6, 1>& S, Eigen::Matrix<float, 6, 6>& V )
+void ITMDepthTracker::computeSVD_3(  float const * hessian, Eigen::Matrix<float, 3, 3>& U, Eigen::Matrix<float, 3, 1>& S, Eigen::Matrix<float, 3, 3>& V ) const
+{
+    computeSVD_3R( hessian, U, S, V );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::computeSVD_6( float const * hessian, Eigen::Matrix<float, 6, 6>& U, Eigen::Matrix<float, 6, 1>& S, Eigen::Matrix<float, 6, 6>& V ) const
 {
     // Compute the SVD.
     // NOTE: we only use the 3x3 top-left block of the 6x6 hessian.
