@@ -126,57 +126,69 @@ void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bo
 	for (int i = 0; i < 6; i++) step[i] = 0;
 
 	if (shortIteration)
-	{
-        // Convert the 6x6 hessian into a 3x3 hessian.
-		float smallHessian[3 * 3];
-        for (int r = 0; r < 3; r++)
-            for (int c = 0; c < 3; c++)
-                smallHessian[r + c * 3] = hessian[r + c * 6];
+    {
+        // Decompose space.
+        Eigen::Matrix<float, 3, 3> U;
+        Eigen::Matrix<float, 3, 1> S;
+        Eigen::Matrix<float, 3, 3> V;
+        computeSVD_3( hessian, U, S, V );
+
+        // Inversion.
+        Eigen::Matrix<float, 3, 3> S_inv = Eigen::Matrix<float, 3, 3>::Identity();
+        S_inv(0, 0) = 1.0f / S(0);
+        S_inv(1, 1) = 1.0f / S(1);
+        S_inv(2, 2) = 1.0f / S(2);
+
+        Eigen::Matrix<float, 3, 3> AtA_inv = V * S_inv * V.transpose();
 
         // Solve.
-		ORUtils::Cholesky cholA(smallHessian, 3);
-		cholA.Backsub(step, nabla);
+        Eigen::Matrix<float, 3, 1> Atb;
+        Atb << nabla[0],
+               nabla[1],
+               nabla[2];
 
-//        // Compute the SVD.
-//        Eigen::Matrix<float, 3, 3> AtA;
-//        AtA << smallHessian[ 0], smallHessian[ 1], smallHessian[ 2],
-//               smallHessian[ 3], smallHessian[ 4], smallHessian[ 5],
-//               smallHessian[ 6], smallHessian[ 7], smallHessian[ 8];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
-//        std::cout << "---------" << std::endl;
-//        std::cout << "Iteration type : " << iterationType << std::endl;
-//        Eigen::Matrix<float, 3, 1> sv = svd.singularValues();
-//        float divider = sv(0);
-//        for ( uint i = 0; i < sv.rows(); ++i)
-//            sv(i) /= divider;
-//        std::cout << "Its singular values are:" << std::endl << sv << std::endl;
-//        std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
-//        std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+        Eigen::Matrix<float, 3, 1> X = AtA_inv * Atb;
+
+        step[0] = X(0);
+        step[1] = X(1);
+        step[2] = X(2);
 	}
 	else
-	{
-        // Solve.
-		ORUtils::Cholesky cholA(hessian, 6);
-		cholA.Backsub(step, nabla);
+    {
+        // Decompose space.
+        Eigen::Matrix<float, 6, 6> U;
+        Eigen::Matrix<float, 6, 1> S;
+        Eigen::Matrix<float, 6, 6> V;
+        computeSVD_6( hessian, U, S, V );
 
-//        // Compute the 6x6 SVD.
-//        Eigen::Matrix<float, 6, 6> AtA;
-//        AtA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
-//               hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
-//               hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
-//               hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
-//               hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
-//               hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
-//        std::cout << "---------" << std::endl;
-//        std::cout << "Iteration type : " << iterationType << std::endl;
-//        Eigen::Matrix<float, 6, 1> sv = svd.singularValues();
-//        float divider = sv(0);
-//        for ( uint i = 0; i < sv.rows(); ++i)
-//            sv(i) /= divider;
-//        std::cout << "Its singular values are:" << std::endl << sv << std::endl;
-//        std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
-//        std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+        // Inversion.
+        Eigen::Matrix<float, 6, 6> S_inv = Eigen::Matrix<float, 6, 6>::Identity();
+        S_inv(0, 0) = 1.0f / S(0);
+        S_inv(1, 1) = 1.0f / S(1);
+        S_inv(2, 2) = 1.0f / S(2);
+        S_inv(3, 3) = 1.0f / S(3);
+        S_inv(4, 4) = 1.0f / S(4);
+        S_inv(5, 5) = 1.0f / S(5);
+
+        Eigen::Matrix<float, 6, 6> AtA_inv = V * S_inv * V.transpose();
+
+        // Solve.
+        Eigen::Matrix<float, 6, 1> Atb;
+        Atb << nabla[0],
+               nabla[1],
+               nabla[2],
+               nabla[3],
+               nabla[4],
+               nabla[5];
+
+        Eigen::Matrix<float, 6, 1> X = AtA_inv * Atb;
+
+        step[0] = X(0);
+        step[1] = X(1);
+        step[2] = X(2);
+        step[3] = X(3);
+        step[4] = X(4);
+        step[5] = X(5);
 	}
 }
 
