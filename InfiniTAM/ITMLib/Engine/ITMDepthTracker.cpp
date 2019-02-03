@@ -123,73 +123,26 @@ void ITMDepthTracker::SetEvaluationParams(int levelId)
 ////////////////////////////////////////////////////////////////////////////////
 void ITMDepthTracker::ComputeDelta(float *step, float *nabla, float *hessian, bool shortIteration) const
 {
-	for (int i = 0; i < 6; i++) step[i] = 0;
+    for (int i = 0; i < 6; i++) step[i] = 0;
 
-	if (shortIteration)
+    if (shortIteration)
     {
-        // Decompose space.
-        Eigen::Matrix<float, 3, 3> U;
-        Eigen::Matrix<float, 3, 1> S;
-        Eigen::Matrix<float, 3, 3> V;
-        computeSVD_3( hessian, U, S, V );
-
-        // Inversion.
-        Eigen::Matrix<float, 3, 3> S_inv = Eigen::Matrix<float, 3, 3>::Identity();
-        S_inv(0, 0) = 1.0f / S(0);
-        S_inv(1, 1) = 1.0f / S(1);
-        S_inv(2, 2) = 1.0f / S(2);
-
-        Eigen::Matrix<float, 3, 3> AtA_inv = V * S_inv * V.transpose();
+        // Convert the 6x6 hessian into a 3x3 hessian.
+        float smallHessian[3 * 3];
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                smallHessian[r + c * 3] = hessian[r + c * 6];
 
         // Solve.
-        Eigen::Matrix<float, 3, 1> Atb;
-        Atb << nabla[0],
-               nabla[1],
-               nabla[2];
-
-        Eigen::Matrix<float, 3, 1> X = AtA_inv * Atb;
-
-        step[0] = X(0);
-        step[1] = X(1);
-        step[2] = X(2);
-	}
-	else
+        ORUtils::Cholesky cholA(smallHessian, 3);
+        cholA.Backsub(step, nabla);
+    }
+    else
     {
-        // Decompose space.
-        Eigen::Matrix<float, 6, 6> U;
-        Eigen::Matrix<float, 6, 1> S;
-        Eigen::Matrix<float, 6, 6> V;
-        computeSVD_6( hessian, U, S, V );
-
-        // Inversion.
-        Eigen::Matrix<float, 6, 6> S_inv = Eigen::Matrix<float, 6, 6>::Identity();
-        S_inv(0, 0) = 1.0f / S(0);
-        S_inv(1, 1) = 1.0f / S(1);
-        S_inv(2, 2) = 1.0f / S(2);
-        S_inv(3, 3) = 1.0f / S(3);
-        S_inv(4, 4) = 1.0f / S(4);
-        S_inv(5, 5) = 1.0f / S(5);
-
-        Eigen::Matrix<float, 6, 6> AtA_inv = V * S_inv * V.transpose();
-
         // Solve.
-        Eigen::Matrix<float, 6, 1> Atb;
-        Atb << nabla[0],
-               nabla[1],
-               nabla[2],
-               nabla[3],
-               nabla[4],
-               nabla[5];
-
-        Eigen::Matrix<float, 6, 1> X = AtA_inv * Atb;
-
-        step[0] = X(0);
-        step[1] = X(1);
-        step[2] = X(2);
-        step[3] = X(3);
-        step[4] = X(4);
-        step[5] = X(5);
-	}
+        ORUtils::Cholesky cholA(hessian, 6);
+        cholA.Backsub(step, nabla);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,7 +266,7 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
     Eigen::Framef f_cam_tracker;
     f_cam_tracker = PoseToFrame( view->calib->m_h_cam_beacon.calib );
     static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
-    Eigen::Framef f_bK_0    = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase    * f_cam_tracker;
+    Eigen::Framef f_bK_0    = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase   * f_cam_tracker;
 
     Eigen::Framef f_bKm1_0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_trackerKm1_mocapBase * f_cam_tracker;
 
@@ -405,143 +358,109 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         }
     }
 
-    // Space decomposition: translations.
-    Eigen::Matrix<float, 3, 3> U;
-    Eigen::Matrix<float, 3, 1> S;
-    Eigen::Matrix<float, 3, 3> V_raw;
-    computeSVD_3T( hessian_raw, U, S, V_raw );
-
+    // Space decomposition.
     Eigen::Framef f_km1_0 = MatToFrame( mat_km1_0 );
     Eigen::Framef f_icp_0 = MatToFrame( approxInvPose );
 
-    Eigen::Matrix<float, 3, 3> V = V_raw;
-    if ( V_raw.determinant() < 0.0f )
-        V.col(0) = -V_raw.col(0); // Make sure V is a direct basis.
+    // Space decomposition: translations.
+    Eigen::Vector3f p_k_0;
+    {
+        Eigen::Matrix<float, 3, 3> U;
+        Eigen::Matrix<float, 3, 1> S;
+        Eigen::Matrix<float, 3, 3> V_raw;
+        computeSVD_3T( hessian_raw, U, S, V_raw );
 
-    Eigen::Quaternionf q_V_0( V );
-    q_V_0.normalize(); // mat3 -> quat conversion in Eigen needs to be normalized.
+        Eigen::Matrix<float, 3, 3> V = V_raw;
+        if ( V_raw.determinant() < 0.0f )
+            V.col(0) = -V_raw.col(0); // Make sure V is a direct basis.
 
-    Eigen::Vector3f v_icp_km1_0 = f_icp_0.m_pos - f_km1_0.m_pos;
-    Eigen::Vector3f v_bK_bKm1_0 = f_bK_0.m_pos - f_bKm1_0.m_pos;
+        Eigen::Quaternionf q_V_0( V );
+        q_V_0.normalize(); // mat3 -> quat conversion in Eigen needs to be normalized.
 
-    Eigen::Vector3f v_icp_km1_V = q_V_0.conjugate() * v_icp_km1_0;
-    Eigen::Vector3f v_bK_bKm1_V = q_V_0.conjugate() * v_bK_bKm1_0;
+        Eigen::Vector3f v_icp_km1_0 = f_icp_0.m_pos - f_km1_0.m_pos;
+        Eigen::Vector3f v_bK_bKm1_0 = f_bK_0.m_pos - f_bKm1_0.m_pos;
 
-    Eigen::Vector3f v_k_km1_V = v_icp_km1_V;
-    if ( S(0) / S(1) > 10.0f )
-        v_k_km1_V(1) = v_bK_bKm1_V(1);
-    if ( S(0) / S(2) > 10.0f )
-        v_k_km1_V(2) = v_bK_bKm1_V(2);
+        Eigen::Vector3f v_icp_km1_V = q_V_0.conjugate() * v_icp_km1_0;
+        Eigen::Vector3f v_bK_bKm1_V = q_V_0.conjugate() * v_bK_bKm1_0;
 
-    Eigen::Vector3f v_k_km1_0 = q_V_0 * v_k_km1_V;
+        Eigen::Vector3f v_k_km1_V = v_icp_km1_V;
+        if ( S(0) / S(1) > 10.0f )
+            v_k_km1_V(1) = v_bK_bKm1_V(1);
+        if ( S(0) / S(2) > 10.0f )
+            v_k_km1_V(2) = v_bK_bKm1_V(2);
 
-    Eigen::Framef f_k_0 = Eigen::Framef( f_icp_0.m_quat, f_km1_0.m_pos + v_k_km1_0 );
+        Eigen::Vector3f v_k_km1_0 = q_V_0 * v_k_km1_V;
+
+        p_k_0 = f_km1_0.m_pos + v_k_km1_0;
+    }
+
+//    // DEBUG.
+//    static int i = 0;
+//    std::cout << "idx : " << i << std::endl;
+//    std::cout << "\033[1;31m";
+//    if ( S(0) / S(1) > 10.0f )
+//        std::cout << "Component 1" << std::endl;
+//    if ( S(0) / S(2) > 10.0f )
+//        std::cout << "Component 2" << std::endl;
+//    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
+//    {
+//        std::cout << "\n   " << "v_icp_km1_0 : " << std::endl << v_icp_km1_0 << std::endl;
+//        std::cout << "\n   " << "v_bK_bKm1_0 : " << std::endl << v_bK_bKm1_0 << std::endl;
+//        std::cout << "\n   " << "v_icp_km1_V : " << std::endl << v_icp_km1_V << std::endl;
+//        std::cout << "\n   " << "v_bK_bKm1_V : " << std::endl << v_bK_bKm1_V << std::endl;
+//        std::cout << "\n   " << "v_k_km1_V : "   << std::endl << v_k_km1_V   << std::endl;
+//        std::cout << "\n   " << "v_k_km1_0 : "   << std::endl << v_k_km1_0   << std::endl;
+//        std::cout << "\n   " << "f_k_0.m_pos : " << std::endl << f_k_0.m_pos << std::endl;
+//    }
+//    std::cout << "\033[0m\n";
+//    ++i;
+//    // END DEBUG.
+
+    // Space decomposition: rotations.
+    Eigen::Quaternionf q_k_0;
+    {
+        Eigen::Matrix<float, 3, 3> U;
+        Eigen::Matrix<float, 3, 1> S;
+        Eigen::Matrix<float, 3, 3> V_raw;
+        computeSVD_3R( hessian_raw, U, S, V_raw );
+
+        Eigen::Matrix<float, 3, 3> V = V_raw;
+        if ( V_raw.determinant() < 0.0f )
+            V.col(0) = -V_raw.col(0); // Make sure V is a direct basis.
+
+        Eigen::Quaternionf q_V_0( V );
+        q_V_0.normalize(); // mat3 -> quat conversion in Eigen needs to be normalized.
+
+        Eigen::Framef f_icp_km1 = f_km1_0.getInverse()  * f_icp_0;
+        Eigen::Framef f_bk_bkm1 = f_bKm1_0.getInverse() * f_bK_0;
+
+        Eigen::Vector3f r_icp_km1_0 = f_km1_0.m_quat  * f_icp_km1.m_quat.toRotationVector();
+        Eigen::Vector3f r_bk_bkm1_0 = f_bKm1_0.m_quat * f_bk_bkm1.m_quat.toRotationVector();
+
+        Eigen::Vector3f r_icp_km1_V = q_V_0.conjugate() * r_icp_km1_0;
+        Eigen::Vector3f r_bk_bkm1_V = q_V_0.conjugate() * r_bk_bkm1_0;
+
+        Eigen::Vector3f r_k_km1_V = r_icp_km1_V;
+        if ( S(0) / S(1) > 20.0f )
+            r_k_km1_V(1) = r_bk_bkm1_V(1);
+        if ( S(0) / S(2) > 20.0f )
+            r_k_km1_V(2) = r_bk_bkm1_V(2);
+
+        Eigen::Vector3f r_k_km1 = f_km1_0.m_quat.conjugate() * q_V_0 * r_k_km1_V;
+
+        Eigen::Quaternionf q_k_km1; q_k_km1.fromRotationVector( r_k_km1 );
+        q_k_0 = f_km1_0.m_quat * q_k_km1;
+    }
+
+    // Recomposition.
+//    Eigen::Framef f_k_0 = Eigen::Framef( f_icp_0.m_quat, p_k_0 );
+    Eigen::Framef f_k_0 = Eigen::Framef( q_k_0, p_k_0 );
 
     approxInvPose = FrameToMat( f_k_0 );
 
     trackingState->pose_d->SetInvM(approxInvPose);
     trackingState->pose_d->Coerce(); // Orthonormalization.
     approxInvPose = trackingState->pose_d->GetInvM();
-
-    // DEBUG.
-    static int i = 0;
-    std::cout << "idx : " << i << std::endl;
-    std::cout << "\033[1;31m";
-    if ( S(0) / S(1) > 10.0f )
-        std::cout << "Component 1" << std::endl;
-    if ( S(0) / S(2) > 10.0f )
-        std::cout << "Component 2" << std::endl;
-    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
-    {
-        std::cout << "\n   " << "v_icp_km1_0 : " << std::endl << v_icp_km1_0 << std::endl;
-        std::cout << "\n   " << "v_bK_bKm1_0 : " << std::endl << v_bK_bKm1_0 << std::endl;
-        std::cout << "\n   " << "v_icp_km1_V : " << std::endl << v_icp_km1_V << std::endl;
-        std::cout << "\n   " << "v_bK_bKm1_V : " << std::endl << v_bK_bKm1_V << std::endl;
-        std::cout << "\n   " << "v_k_km1_V : "   << std::endl << v_k_km1_V   << std::endl;
-        std::cout << "\n   " << "v_k_km1_0 : "   << std::endl << v_k_km1_0   << std::endl;
-        std::cout << "\n   " << "f_k_0.m_pos : " << std::endl << f_k_0.m_pos << std::endl;
-    }
-    std::cout << "\033[0m\n";
-    ++i;
-    // END DEBUG.
-
-    // Space decomposition: rotations.
-
-
-
-//    // Decompose space into useful and useless components using an SVD.
-//    if ( iterationType != TRACKER_ITERATION_BOTH )
-//    {
-//        // Convert the 6x6 hessian into a 3x3 hessian.
-//        float smallHessian[3 * 3];
-//        for (int r = 0; r < 3; r++)
-//            for (int c = 0; c < 3; c++)
-//                smallHessian[r + c * 3] = hessian[r + c * 6];
-
-//        // Compute the SVD.
-//        Eigen::Matrix<float, 3, 3> AtA;
-//        AtA << smallHessian[ 0], smallHessian[ 1], smallHessian[ 2],
-//               smallHessian[ 3], smallHessian[ 4], smallHessian[ 5],
-//               smallHessian[ 6], smallHessian[ 7], smallHessian[ 8];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
-//        std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
-//        std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
-//        std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
-//    }
-//    else
-//    {
-//        // Compute the SVD on rotations.
-//        Eigen::Matrix<float, 3, 3> AtA_rot;
-//        AtA_rot << hessian[ 0], hessian[ 1], hessian[ 2],
-//                   hessian[ 6], hessian[ 7], hessian[ 8],
-//                   hessian[12], hessian[13], hessian[14];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd_rot( AtA_rot, Eigen::ComputeFullU | Eigen::ComputeFullV  );
-//        std::cout << "ROTATIONS" << std::endl;
-//        Eigen::Matrix<float, 3, 1> sv_rot = svd_rot.singularValues();
-//        float divider_rot = sv_rot(0);
-//        for ( uint i = 0; i < sv_rot.rows(); ++i)
-//            sv_rot(i) /= divider_rot;
-//        std::cout << "Its singular values are:" << std::endl << sv_rot << std::endl;
-//        std::cout << "Its Matrix U is:" << std::endl << svd_rot.matrixU() << std::endl;
-//        std::cout << "Its Matrix V is:" << std::endl << svd_rot.matrixV() << std::endl;
-//        std::cout << std::endl;
-
-//        // Compute the SVD on translations.
-//        Eigen::Matrix<float, 3, 3> AtA_trans;
-//        AtA_trans << hessian[21], hessian[22], hessian[23],
-//                     hessian[27], hessian[28], hessian[29],
-//                     hessian[33], hessian[34], hessian[35];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 3, 3> > svd_trans( AtA_trans, Eigen::ComputeFullU | Eigen::ComputeFullV  );
-//        std::cout << "TRANSLATIONS" << std::endl;
-//        Eigen::Matrix<float, 3, 1> sv_trans = svd_trans.singularValues();
-//        float divider_trans = sv_trans(0);
-//        for ( uint i = 0; i < sv_trans.rows(); ++i)
-//            sv_trans(i) /= divider_trans;
-//        std::cout << "Its singular values are:" << std::endl << sv_trans << std::endl;
-//        std::cout << "Its Matrix U is:" << std::endl << svd_trans.matrixU() << std::endl;
-//        std::cout << "Its Matrix V is:" << std::endl << svd_trans.matrixV() << std::endl;
-//        std::cout << std::endl;
-
-//        // Compute the 6x6 SVD.
-//        Eigen::Matrix<float, 6, 6> AtA;
-//        AtA << hessian[ 0], hessian[ 1], hessian[ 2], hessian[ 3], hessian[ 4], hessian[ 5],
-//               hessian[ 6], hessian[ 7], hessian[ 8], hessian[ 9], hessian[10], hessian[11],
-//               hessian[12], hessian[13], hessian[14], hessian[15], hessian[16], hessian[17],
-//               hessian[18], hessian[19], hessian[20], hessian[21], hessian[22], hessian[23],
-//               hessian[24], hessian[25], hessian[26], hessian[27], hessian[28], hessian[29],
-//               hessian[30], hessian[31], hessian[32], hessian[33], hessian[34], hessian[35];
-//        Eigen::JacobiSVD<Eigen::Matrix<float, 6, 6> > svd_both( AtA, Eigen::ComputeFullU | Eigen::ComputeFullV  );
-//        std::cout << "BOTH" << std::endl;
-//        Eigen::Matrix<float, 6, 1> sv_both = svd_both.singularValues();
-//        float divider_both = sv_both(0);
-//        for ( uint i = 0; i < sv_both.rows(); ++i)
-//            sv_both(i) /= divider_both;
-//        std::cout << "Its singular values are:" << std::endl << sv_both << std::endl;
-//        std::cout << "Its Matrix U is:" << std::endl << svd_both.matrixU() << std::endl;
-//        std::cout << "Its Matrix V is:" << std::endl << svd_both.matrixV() << std::endl;
-//    }
-
-    f_bKm1_0 = f_bK_0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -561,7 +480,11 @@ void ITMDepthTracker::computeSVD_3R( float const * hessian, Eigen::Matrix<float,
     V = svd.matrixV();
 
     // DEBUG : display.
-    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+//    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+    std::cout << "Its singular values are:" << std::endl;
+    std::cout << std::setw(10) << S(0) << std::setw(10) << S(0) / S(0) << std::setw(10) << S(0) / S(0) << std::endl;
+    std::cout << std::setw(10) << S(1) << std::setw(10) << S(0) / S(1) << std::setw(10) << S(0) / S(1) << std::endl;
+    std::cout << std::setw(10) << S(2) << std::setw(10) << S(0) / S(2) << std::setw(10) << S(1) / S(2) << std::endl;
     std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
     std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 }
@@ -582,10 +505,10 @@ void ITMDepthTracker::computeSVD_3T( float const * hessian, Eigen::Matrix<float,
     S = svd.singularValues();
     V = svd.matrixV();
 
-    // DEBUG : display.
-    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
-    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
-    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+//    // DEBUG : display.
+//    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+//    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+//    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
