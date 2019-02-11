@@ -27,6 +27,12 @@ _CPU_AND_GPU_CODE_ inline void convertDepthAffineToFloat(DEVICEPTR(float) *d_out
 	d_out[locId] = ((depth_in <= 0)||(depth_in > 32000)) ? -1.0f : (float)depth_in * depthCalibParams.x + depthCalibParams.y;
 }
 
+_CPU_AND_GPU_CODE_ inline void correctDepth(DEVICEPTR(float) *d_out, int x, int y, const CONSTPTR(float) *d_in, Vector2i imgSize, const DepthCorrectionModel::DeviceFunctor &correctionFunctor)
+{
+	int locId = x + y * imgSize.x;
+	d_out[locId] = correctionFunctor.undistord(static_cast<size_t>(x), static_cast<size_t>(y), d_in[locId]);
+}
+
 #define MEAN_SIGMA_L 1.2232f
 _CPU_AND_GPU_CODE_ inline void filterDepth(DEVICEPTR(float) *imageData_out, const CONSTPTR(float) *imageData_in, int x, int y, Vector2i imgDims)
 {

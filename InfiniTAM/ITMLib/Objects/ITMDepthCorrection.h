@@ -96,12 +96,9 @@ public:
     {}
 
     Polynomial(const Polynomial &) = default;
-
     Polynomial(Polynomial &&) noexcept = default;
-
     Polynomial &operator=(const Polynomial &) = default;
-
-    Polynomial &operator=(Polynomial &&) = default;
+    Polynomial &operator=(Polynomial &&) noexcept = default;
 
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE _Scalar evaluate(_Scalar x) const
     {
@@ -135,6 +132,8 @@ using GlobalPolynomial = Polynomial<_Scalar, 2>;
 template<typename _Scalar, typename _Polynomial>
 class CorrectionModel
 {
+public:
+
     struct LookupTableData
     {
         Size2 index;
@@ -142,10 +141,50 @@ class CorrectionModel
     };
 
     using LookupBin = LookupTableData[4];
-
-public:
     using Scalar = _Scalar;
     using Polynomial = _Polynomial;
+
+    /**
+     * @brief Class to apply correction model, based either on CPU or on GPU
+     * @todo Name can be improved
+     */
+    class DeviceFunctor
+    {
+        const CONSTPTR(CorrectionModel::Polynomial) *_polynomials;
+        const CONSTPTR(CorrectionModel::LookupBin) *_lookupTable;
+        size_t _imageWidth;
+        size_t _matrixWidth;
+
+    public:
+        DeviceFunctor(const CONSTPTR(CorrectionModel::Polynomial) *polynomials,
+                      const CONSTPTR(CorrectionModel::LookupBin) *lookupTable,
+                      size_t imageWidth,
+                      size_t matrixWidth)
+                : _polynomials (polynomials),
+                  _lookupTable (lookupTable),
+                  _imageWidth (imageWidth),
+                  _matrixWidth (matrixWidth) {}
+        ~DeviceFunctor() = default;
+
+        EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE _Scalar undistord(size_t x, size_t y, _Scalar depth) const
+        {
+            const LookupBin &lookupBin = _lookupTable[y * _imageWidth + x];
+            _Scalar tmp_depth = 0.0;
+            _Scalar weight_sum = 0.0;
+
+#pragma unroll
+            for (size_t i = 0; i < 4; ++i)
+            {
+                const LookupTableData &ltData = lookupBin[i];
+                const Polynomial &polynomial = _polynomials[ltData.index.y() * _matrixWidth + ltData.index.x()];
+                weight_sum += ltData.weight;
+                tmp_depth += ltData.weight * polynomial.evaluate(depth);
+            }
+
+            return tmp_depth / weight_sum;
+        }
+
+    };
 
     /// \brief Default constructor. Initialize a correction model that will do nothing.
     CorrectionModel()
@@ -176,14 +215,15 @@ public:
     }
 
     CorrectionModel(const CorrectionModel &other) = default;
-
     CorrectionModel(CorrectionModel &&other) noexcept = default;
-
     CorrectionModel &operator=(const CorrectionModel &other) = default;
-
     CorrectionModel &operator=(CorrectionModel &&other) noexcept = default;
-
     ~CorrectionModel() = default;
+
+    inline DeviceFunctor getFunctor(MemoryDeviceType memType) const
+    {
+        return DeviceFunctor(_polynomials.GetData(memType), _lookupTable.GetData(memType), _imageSize.x(), _matrixSize.x());
+    }
 
     /**
      * Resize the correction model, so it will works for another format of image.
@@ -191,6 +231,9 @@ public:
      */
     void resize(Size2 imageSize)
     {
+        if ((imageSize == _imageSize).all())
+            return;
+
         _imageSize = imageSize;
         _binSize = _imageSize / (_matrixSize - Size2(1, 1));
         assert((_binSize.x() == 1 || _binSize.x() % 2 == 0) && (_binSize.y() == 1 || _binSize.y() % 2 == 0));
@@ -198,23 +241,6 @@ public:
         _lookupTable = ORUtils::MemoryBlock<LookupBin >(_imageSize.prod(), true, true);
         buildLookupTable();
         _lookupTable.UpdateDeviceFromHost();
-    }
-
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE _Scalar undistort(size_t x, size_t y, _Scalar depth) const
-    {
-        const LookupBin &lookupBin = lookup(x, y);
-        _Scalar tmp_depth = 0.0;
-        _Scalar weight_sum = 0.0;
-
-#pragma unroll
-        for (size_t i = 0; i < 4; ++i)
-        {
-            const LookupTableData &ltData = lookupBin[i];
-            weight_sum += ltData.weight;
-            tmp_depth += ltData.weight * polynomial(ltData.index.x(), ltData.index.y()).evaluate(depth);
-        }
-
-        return tmp_depth / weight_sum;
     }
 
     // Getters
@@ -313,6 +339,24 @@ public:
     using LocalModel = _LocalModel;
     using GlobalModel = _GlobalModel;
 
+    class DeviceFunctor
+    {
+        typename LocalModel::DeviceFunctor _localFunctor;
+        typename GlobalModel::DeviceFunctor _globalFunctor;
+
+    public:
+        DeviceFunctor(typename LocalModel::DeviceFunctor localFunctor,
+                      typename GlobalModel::DeviceFunctor globalFunctor)
+                : _localFunctor (localFunctor),
+                  _globalFunctor (globalFunctor) {}
+        ~DeviceFunctor() = default;
+
+        EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE _Scalar undistord(size_t x, size_t y, _Scalar depth) const
+        {
+            return _globalFunctor.undistord(x, y, _localFunctor.undistord(x, y, depth));
+        }
+    };
+
     /// @brief Default constructor
     TwoStepsCorrectionModel() = default;
     ~TwoStepsCorrectionModel() = default;
@@ -324,6 +368,16 @@ public:
     TwoStepsCorrectionModel(LocalModel &&localModel, GlobalModel &&globalModel)
             : _localModel(std::move(localModel)), _globalModel(std::move(globalModel))
     {}
+
+    /**
+     * Resize the correction model, so it will works for another format of image.
+     * @param imageSize Size of the images to process
+     */
+    void resize(Size2 imageSize)
+    {
+        _localModel.resize(imageSize);
+        _globalModel.resize(imageSize);
+    }
 
     const LocalModel &localModel() const
     {
@@ -343,6 +397,11 @@ public:
     void setGlobalModel(GlobalModel globalModel)
     {
         _globalModel = std::move(globalModel);
+    }
+
+    inline DeviceFunctor getFunctor(MemoryDeviceType memType) const
+    {
+        return DeviceFunctor(_localModel.getFunctor(memType), _globalModel.getFunctor(memType));
     }
 
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE _Scalar undistord(size_t x, size_t y, _Scalar depth) const

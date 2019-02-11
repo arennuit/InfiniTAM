@@ -21,6 +21,7 @@ ITMViewBuilder_CUDA::~ITMViewBuilder_CUDA(void) { }
 
 __global__ void convertDisparityToDepth_device(float *depth_out, const short *depth_in, Vector2f disparityCalibParams, float fx_depth, Vector2i imgSize);
 __global__ void convertDepthAffineToFloat_device(float *d_out, const short *d_in, Vector2i imgSize, Vector2f depthCalibParams);
+__global__ void depthCorrection_device(float *d_out, const float *d_in, Vector2i imgSize, const DepthCorrectionModel::DeviceFunctor correctionFunctor);
 __global__ void filterDepth_device(float *imageData_out, const float *imageData_in, Vector2i imgDims);
 __global__ void ComputeNormalAndWeight_device(const float* depth_in, Vector4f* normal_out, float *sigmaL_out, Vector2i imgDims, Vector4f intrinsic);
 
@@ -64,6 +65,8 @@ void ITMViewBuilder_CUDA::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImag
 	default:
 		break;
 	}
+
+	DepthCorrection(view->depth);
 
 	if (useBilateralFilter)
 	{
@@ -178,6 +181,24 @@ void ITMViewBuilder_CUDA::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, co
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void ITMViewBuilder_CUDA::DepthCorrection(ITMFloatImage *image)
+{
+    Vector2i imgSize = image->noDims;
+
+    assert(imgSize.width == calib->depth_correction.globalModel().imageSize().x());
+    assert(imgSize.height == calib->depth_correction.globalModel().imageSize().y());
+
+    // Note: pointer aliasing is intentional here and should not pause any problem.
+    float *d_out = image->GetData(MEMORYDEVICE_CUDA);
+    const float *d_in = d_out;
+    DepthCorrectionModel::DeviceFunctor correctionFunctor = calib->depth_correction.getFunctor(MEMORYDEVICE_CUDA);
+
+    dim3 blockSize(16, 16);
+    dim3 gridSize((int)ceil((float)imgSize.x / (float)blockSize.x), (int)ceil((float)imgSize.y / (float)blockSize.y));
+    depthCorrection_device <<<gridSize, blockSize>>> (d_out, d_in, imgSize, correctionFunctor);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CUDA::DepthFiltering(ITMFloatImage *image_out, const ITMFloatImage *image_in)
 {
 	Vector2i imgDims = image_in->noDims;
@@ -234,6 +255,17 @@ __global__ void convertDepthAffineToFloat_device(float *d_out, const short *d_in
 	if ((x >= imgSize.x) || (y >= imgSize.y)) return;
 
 	convertDepthAffineToFloat(d_out, x, y, d_in, imgSize, depthCalibParams);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+__global__ void depthCorrection_device(float *d_out, const float *d_in, Vector2i imgSize, const DepthCorrectionModel::DeviceFunctor correctionFunctor)
+{
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if ((x >= imgSize.x) || (y >= imgSize.y)) return;
+
+    correctDepth(d_out, x, y, d_in, imgSize, correctionFunctor);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

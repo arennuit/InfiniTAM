@@ -47,6 +47,9 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
 		break;
 	}
 
+	// Correct depth
+	DepthCorrection(view->depth);
+
 	if (useBilateralFilter)
 	{
 		//5 steps of bilateral filtering
@@ -151,6 +154,22 @@ void ITMViewBuilder_CPU::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, con
 
 	for (int y = 0; y < imgSize.y; y++) for (int x = 0; x < imgSize.x; x++)
 		convertDepthAffineToFloat(d_out, x, y, d_in, imgSize, depthCalibParams);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMViewBuilder_CPU::DepthCorrection(ITMFloatImage *image)
+{
+	Vector2i imgSize = image->noDims;
+
+	assert(image->noDims.width == calib->depth_correction.globalModel().imageSize().x());
+	assert(image->noDims.height == calib->depth_correction.globalModel().imageSize().y());
+
+	const float *d_in = image->GetData(MEMORYDEVICE_CPU);
+	float *d_out = image->GetData(MEMORYDEVICE_CPU);
+	DepthCorrectionModel::DeviceFunctor correctionFunctor = calib->depth_correction.getFunctor(MEMORYDEVICE_CPU);
+
+	for (int y = 0; y < imgSize.y; y++) for (int x = 0; x < imgSize.x; x++)
+			correctDepth(d_out, x, y, d_in, imgSize, correctionFunctor);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
