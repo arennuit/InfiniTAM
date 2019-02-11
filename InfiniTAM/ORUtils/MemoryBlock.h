@@ -284,9 +284,11 @@ namespace ORUtils
                 SetFrom(&other, CPU_TO_CPU);
             if (isAllocated_CUDA)
                 SetFrom(&other, CUDA_TO_CUDA);
+
+			return *this;
         }
 
-        MemoryBlock(MemoryBlock&& other):
+        MemoryBlock(MemoryBlock&& other) noexcept:
             isAllocated_CPU (other.isAllocated_CPU),
             isAllocated_CUDA (other.isAllocated_CUDA),
             isMetalCompatible (other.isMetalCompatible),
@@ -302,23 +304,16 @@ namespace ORUtils
             other.dataSize = 0;
         }
 
-        MemoryBlock& operator=(MemoryBlock &&other)
+        MemoryBlock& operator=(MemoryBlock &&other) noexcept
         {
-            Free();
+			std::swap(isAllocated_CPU, other.isAllocated_CPU);
+			std::swap(isAllocated_CUDA, other.isAllocated_CUDA);
+			std::swap(isMetalCompatible, other.isMetalCompatible);
+			std::swap(data_cpu, other.data_cpu);
+			std::swap(data_cuda, other.data_cuda);
+			std::swap(dataSize, other.dataSize);
 
-            isAllocated_CPU = other.isAllocated_CPU;
-            isAllocated_CUDA = other.isAllocated_CUDA;
-            isMetalCompatible = other.isMetalCompatible;
-            data_cpu = other.data_cpu;
-            data_cuda = other.data_cuda;
-            dataSize = other.dataSize;
-
-            other.isAllocated_CPU = false;
-            other.isAllocated_CUDA = false;
-            other.isMetalCompatible = false;
-            other.data_cpu = nullptr;
-            other.data_cuda = nullptr;
-            other.dataSize = 0;
+			return *this;
         }
 
 #endif

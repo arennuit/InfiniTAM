@@ -18,8 +18,10 @@ namespace ITMLib
 		bool readDisparityCalib(const char *fileName, ITMDisparityCalib & dest);
 		bool readRGBDCalib(std::istream & src, ITMRGBDCalib & dest);
 		bool readRGBDCalib(const char *fileName, ITMRGBDCalib & dest);
+		bool readDepthCorrection(std::istream & src, DepthCorrectionModel &depthCorrectionModel);
+        bool readDepthCorrection(const char *fileName, DepthCorrectionModel &depthCorrectionModel);
 
-        bool readRGBDCalib(const char *rgbIntrinsicsFile, const char *depthIntrinsicsFile, const char *disparityCalibFile, const char *extrinsicsFile, const char *camInTrackerFile, ITMRGBDCalib & dest);
+        bool readRGBDCalib(const char *rgbIntrinsicsFile, const char *depthIntrinsicsFile, const char *disparityCalibFile, const char *extrinsicsFile, const char *camInTrackerFile, const char *depthCorrectionFile, ITMRGBDCalib & dest);
 	}
 }
 

@@ -29,7 +29,7 @@ static void CreateDefaultImageSource(ImageSourceEngine*& imageSource, IMUSourceE
     uint isRealSense = 0;
     uint isKinect2   = 0;
 
-    for (int i = 1; i < argc; ++i)
+    for (uint i = 1; i < argc; ++i)
     {
         if (std::string(argv[i]) == "--calib")
             isCalib = i;
@@ -206,6 +206,7 @@ try
                   << "usage:" << std::endl
                   << argv[0]
                   << " [--calib <calibFile>]"
+                  << " [--depth-correction <localCalibFile> <globalCalibFile>]"
                   << " [--files <rgbFile> <depthFile>]"
                   << " [--openni [<device URI>]] [--uvc] [--realsense] [--kinect2]"
                   << " [--imu [<imuFile>]] [--mocap [<mocapFile>]]"
