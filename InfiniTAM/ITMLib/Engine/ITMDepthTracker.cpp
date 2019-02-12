@@ -383,11 +383,40 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         Eigen::Vector3f v_icp_km1_V = q_V_0.conjugate() * v_icp_km1_0;
         Eigen::Vector3f v_bK_bKm1_V = q_V_0.conjugate() * v_bK_bKm1_0;
 
+        std::cout << "\033[1;34m";
+        std::cout << "Tx";
+        std::cout << "\033[0m";
+
         Eigen::Vector3f v_k_km1_V = v_icp_km1_V;
         if ( S(0) / S(1) > 10.0f )
+        {
             v_k_km1_V(1) = v_bK_bKm1_V(1);
+
+            std::cout << "\033[1;31m";
+            std::cout << " - Ty";
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            std::cout << "\033[1;34m";
+            std::cout << " - Ty";
+            std::cout << "\033[0m";
+
+        }
         if ( S(0) / S(2) > 10.0f )
+        {
             v_k_km1_V(2) = v_bK_bKm1_V(2);
+
+            std::cout << "\033[1;31m";
+            std::cout << " - Tz";
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            std::cout << "\033[1;34m";
+            std::cout << " - Tz";
+            std::cout << "\033[0m";
+        }
 
         Eigen::Vector3f v_k_km1_0 = q_V_0 * v_k_km1_V;
 
@@ -440,11 +469,41 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         Eigen::Vector3f r_icp_km1_V = q_V_0.conjugate() * r_icp_km1_0;
         Eigen::Vector3f r_bk_bkm1_V = q_V_0.conjugate() * r_bk_bkm1_0;
 
+        std::cout << "\033[1;34m";
+        std::cout << " - Rx";
+        std::cout << "\033[0m";
+
         Eigen::Vector3f r_k_km1_V = r_icp_km1_V;
         if ( S(0) / S(1) > 20.0f )
+        {
             r_k_km1_V(1) = r_bk_bkm1_V(1);
+
+            std::cout << "\033[1;31m";
+            std::cout << " - Ry";
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            std::cout << "\033[1;34m";
+            std::cout << " - Ry";
+            std::cout << "\033[0m";
+
+        }
         if ( S(0) / S(2) > 20.0f )
+        {
             r_k_km1_V(2) = r_bk_bkm1_V(2);
+
+            std::cout << "\033[1;31m";
+            std::cout << " - Rz";
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            std::cout << "\033[1;34m";
+            std::cout << " - Rz";
+            std::cout << "\033[0m";
+        }
+        std::cout << std::endl;
 
         Eigen::Vector3f r_k_km1 = f_km1_0.m_quat.conjugate() * q_V_0 * r_k_km1_V;
 
@@ -479,14 +538,13 @@ void ITMDepthTracker::computeSVD_3R( float const * hessian, Eigen::Matrix<float,
     S = svd.singularValues();
     V = svd.matrixV();
 
-    // DEBUG : display.
-//    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
-    std::cout << "Its singular values are:" << std::endl;
-    std::cout << std::setw(10) << S(0) << std::setw(10) << S(0) / S(0) << std::setw(10) << S(0) / S(0) << std::endl;
-    std::cout << std::setw(10) << S(1) << std::setw(10) << S(0) / S(1) << std::setw(10) << S(0) / S(1) << std::endl;
-    std::cout << std::setw(10) << S(2) << std::setw(10) << S(0) / S(2) << std::setw(10) << S(1) / S(2) << std::endl;
-    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
-    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+//    // DEBUG : display.
+//    std::cout << "Its singular values are:" << std::endl;
+//    std::cout << std::setw(10) << S(0) << std::setw(10) << S(0) / S(0) << std::setw(10) << S(0) / S(0) << std::endl;
+//    std::cout << std::setw(10) << S(1) << std::setw(10) << S(0) / S(1) << std::setw(10) << S(0) / S(1) << std::endl;
+//    std::cout << std::setw(10) << S(2) << std::setw(10) << S(0) / S(2) << std::setw(10) << S(1) / S(2) << std::endl;
+//    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+//    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -536,10 +594,10 @@ void ITMDepthTracker::computeSVD_6( float const * hessian, Eigen::Matrix<float, 
     S = svd.singularValues();
     V = svd.matrixV();
 
-    // DEBUG : display.
-    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
-    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
-    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
+//    // DEBUG : display.
+//    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+//    std::cout << "Its Matrix U is:" << std::endl << svd.matrixU() << std::endl;
+//    std::cout << "Its Matrix V is:" << std::endl << svd.matrixV() << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
