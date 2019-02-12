@@ -9,9 +9,11 @@
 
 #include "ImageSourceEngine.h"
 #include "IMUSourceEngine.h"
+#include "MocapFileEngine.h"
 
 #include <vector>
 
+////////////////////////////////////////////////////////////////////////////////
 namespace InfiniTAM
 {
 	namespace Engine
@@ -38,6 +40,7 @@ namespace InfiniTAM
 			ITMLibSettings internalSettings;
 			ImageSourceEngine *imageSource;
 			IMUSourceEngine *imuSource;
+            MocapSourceEngine *mocapSource;
 			ITMMainEngine *mainEngine;
 
 			StopWatchInterface *timer_instant;
@@ -53,6 +56,7 @@ namespace InfiniTAM
 
 			ITMUChar4Image *inputRGBImage; ITMShortImage *inputRawDepthImage;
 			ITMIMUMeasurement *inputIMUMeasurement;
+            Eigen::Framef *m_inputMocapMeasurement;
 
 			bool freeviewActive;
 			bool intergrationActive;
@@ -62,12 +66,19 @@ namespace InfiniTAM
 			int mouseState;
 			Vector2i mouseLastClick;
 
-			int currentFrameNo; bool isRecording;
+            int currentFrameNo;
+            bool isRecording_km1;
+            bool isRecording;
+
+        protected:
+            void PoseToFrame( Eigen::Framef& frame, ITMPose const& pose );
 		public:
-			static UIEngine* Instance(void) {
+            static UIEngine* Instance(void) {
 				if (instance == NULL) instance = new UIEngine();
 				return instance;
 			}
+            UIEngine();
+            ~UIEngine();
 
 			static void glutDisplayFunction();
 			static void glutIdleFunction();
@@ -84,9 +95,15 @@ namespace InfiniTAM
 			char *outFolder;
 			bool needsRefresh;
 			ITMUChar4Image *saveImage;
+            std::ofstream m_trackingState_file;
+            std::ofstream m_mocap_file;
 
-			void Initialise(int & argc, char** argv, ImageSourceEngine *imageSource, IMUSourceEngine *imuSource, ITMMainEngine *mainEngine,
-				const char *outFolder, ITMLibSettings::DeviceType deviceType);
+            void Initialise(int & argc, char** argv,
+                            ImageSourceEngine *imageSource,
+                            IMUSourceEngine *imuSource,
+                            MocapSourceEngine *mocapSource,
+                            ITMMainEngine *mainEngine,
+                            const char *outFolder, ITMLibSettings::DeviceType deviceType);
 			void Shutdown();
 
 			void Run();

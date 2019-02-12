@@ -4,6 +4,7 @@
 
 using namespace ITMLib::Engine;
 
+////////////////////////////////////////////////////////////////////////////////
 ITMMainEngine::ITMMainEngine(const ITMLibSettings *settings, const ITMRGBDCalib *calib, Vector2i imgSize_rgb, Vector2i imgSize_d)
 {
 	// create all the things required for marching cubes and mesh extraction
@@ -68,6 +69,7 @@ ITMMainEngine::ITMMainEngine(const ITMLibSettings *settings, const ITMRGBDCalib 
 	mainProcessingActive = true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 ITMMainEngine::~ITMMainEngine()
 {
 	delete renderState_live;
@@ -94,12 +96,14 @@ ITMMainEngine::~ITMMainEngine()
 	if (mesh != NULL) delete mesh;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 ITMMesh* ITMMainEngine::UpdateMesh(void)
 {
 	if (mesh != NULL) meshingEngine->MeshScene(mesh, scene);
 	return mesh;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMMainEngine::SaveSceneToMesh(const char *objFileName)
 {
 	if (mesh == NULL) return;
@@ -107,6 +111,7 @@ void ITMMainEngine::SaveSceneToMesh(const char *objFileName)
 	mesh->WriteSTL(objFileName);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
 {
     if (mesh == NULL) return;
@@ -114,29 +119,49 @@ void ITMMainEngine::SavePointsCloudToPcdFile(const char *objFileName)
     mesh->WritePCD(objFileName);
 }
 
-void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement)
+////////////////////////////////////////////////////////////////////////////////
+void ITMMainEngine::ProcessFrame(ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, ITMIMUMeasurement *imuMeasurement, Eigen::Framef *mocapMeasurement)
 {
-	// prepare image and turn it into a depth image
-	if (imuMeasurement==NULL) viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter,settings->modelSensorNoise);
-	else viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, imuMeasurement);
+    // DEBUG.
+    std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
 
-	if (!mainProcessingActive) return;
+    // Prepare raw image and turn it into a depth image.
+    if (imuMeasurement != 0)
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, imuMeasurement);
+    else if (mocapMeasurement != 0)
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, mocapMeasurement);
+    else
+        viewBuilder->UpdateView(&view, rgbImage, rawDepthImage, settings->useBilateralFilter, settings->modelSensorNoise);
 
-	// tracking
-	trackingController->Track(trackingState, view);
+    if (!mainProcessingActive)
+        return;
 
-	// fusion
-	if (fusionActive) denseMapper->ProcessFrame(view, trackingState, scene, renderState_live);
+    // Tracking.
+    // NOTE: the raytracing between PreTrack() and Track() is necessary because
+    //       the raycast scene image depends on the camera position
+    //       initialization achieved in PreTrack().
+//    trackingController->PreTrack(trackingState, view);
+//    trackingController->RayTracing(trackingState, view, renderState_live);
+    trackingController->Track(trackingState, view);
 
-	// raycast to renderState_live for tracking and free visualisation
-	trackingController->Prepare(trackingState, view, renderState_live);
+    // Fusion.
+    if (fusionActive)
+        denseMapper->ProcessFrame(view, trackingState, scene, renderState_live);
+
+    // Raycast to renderState_live for tracking and free visualisation.
+    trackingController->RayTracing(trackingState, view, renderState_live);
+
+    // Frame index.
+    ++(trackingState->m_frameIdx);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 Vector2i ITMMainEngine::GetImageSize(void) const
 {
 	return renderState_live->raycastImage->noDims;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMMainEngine::GetImage(ITMUChar4Image *out, GetImageType getImageType, ITMPose *pose, ITMIntrinsics *intrinsics)
 {
 	if (view == NULL) return;
@@ -196,8 +221,3 @@ void ITMMainEngine::GetImage(ITMUChar4Image *out, GetImageType getImageType, ITM
 		break;
 	};
 }
-
-void ITMMainEngine::turnOnIntegration() { fusionActive = true; }
-void ITMMainEngine::turnOffIntegration() { fusionActive = false; }
-void ITMMainEngine::turnOnMainProcessing() { mainProcessingActive = true; }
-void ITMMainEngine::turnOffMainProcessing() { mainProcessingActive = false; }

@@ -108,7 +108,7 @@ _CPU_AND_GPU_CODE_ inline void computeNormalAndWeight(const CONSTPTR(float) *dep
 
 	// now compute weight
 	float theta = acos(outNormal.z);
-	float theta_diff = theta / (PI*0.5f - theta);
+    float theta_diff = theta / (ORUtils::PI*0.5f - theta);
 
 	sigmaZ_out[idx] = (0.0012f + 0.0019f * (z - 0.4f) * (z - 0.4f) + 0.0001f / sqrt(z) * theta_diff * theta_diff);
 }

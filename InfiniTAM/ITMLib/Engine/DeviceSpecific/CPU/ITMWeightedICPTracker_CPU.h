@@ -16,7 +16,7 @@ namespace ITMLib
 		public:
 			ITMWeightedICPTracker_CPU(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
 				float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine);
-			~ITMWeightedICPTracker_CPU(void);
+            ~ITMWeightedICPTracker_CPU(void);
 		};
 	}
 }

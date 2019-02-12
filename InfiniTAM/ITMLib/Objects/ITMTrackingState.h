@@ -36,6 +36,9 @@ namespace ITMLib
 			/// Current pose of the depth camera.
 			ITMPose *pose_d;
 
+            /// Frame index.
+            uint m_frameIdx;
+
 			bool requiresFullRendering;
 
 			bool TrackerFarFromPointCloud(void) const
@@ -68,6 +71,8 @@ namespace ITMLib
 				this->age_pointCloud = -1;
 				this->pose_pointCloud = new ITMPose();
 				this->pose_pointCloud->SetFrom(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+
+                m_frameIdx = 0;
 
 				requiresFullRendering = true;
 			}

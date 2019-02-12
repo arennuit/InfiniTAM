@@ -62,6 +62,8 @@ Engine/DeviceAgnostic/ITMMeshingEngine.h
 ##
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CPU_SOURCES
 Engine/DeviceSpecific/CPU/ITMColorTracker_CPU.cpp
+Engine/DeviceSpecific/CPU/ITMDepthDefaultTracker_CPU.cpp
+Engine/DeviceSpecific/CPU/ITMDepthMocapTracker_CPU.cpp
 Engine/DeviceSpecific/CPU/ITMDepthTracker_CPU.cpp
 Engine/DeviceSpecific/CPU/ITMWeightedICPTracker_CPU.cpp
 Engine/DeviceSpecific/CPU/ITMLowLevelEngine_CPU.cpp
@@ -75,6 +77,8 @@ Engine/DeviceSpecific/CPU/ITMMeshingEngine_CPU.cpp
 
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CPU_HEADERS
 Engine/DeviceSpecific/CPU/ITMColorTracker_CPU.h
+Engine/DeviceSpecific/CPU/ITMDepthDefaultTracker_CPU.h
+Engine/DeviceSpecific/CPU/ITMDepthMocapTracker_CPU.h
 Engine/DeviceSpecific/CPU/ITMDepthTracker_CPU.h
 Engine/DeviceSpecific/CPU/ITMWeightedICPTracker_CPU.h
 Engine/DeviceSpecific/CPU/ITMLowLevelEngine_CPU.h
@@ -89,6 +93,8 @@ Engine/DeviceSpecific/CPU/ITMMeshingEngine_CPU.h
 ##
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CUDA_SOURCES
 Engine/DeviceSpecific/CUDA/ITMColorTracker_CUDA.cu
+Engine/DeviceSpecific/CUDA/ITMDepthDefaultTracker_CUDA.cu
+Engine/DeviceSpecific/CUDA/ITMDepthMocapTracker_CUDA.cu
 Engine/DeviceSpecific/CUDA/ITMDepthTracker_CUDA.cu
 Engine/DeviceSpecific/CUDA/ITMWeightedICPTracker_CUDA.cu
 Engine/DeviceSpecific/CUDA/ITMLowLevelEngine_CUDA.cu
@@ -103,6 +109,8 @@ Engine/DeviceSpecific/CUDA/ITMMeshingEngine_CUDA.cu
 set(ITMLIB_ENGINE_DEVICESPECIFIC_CUDA_HEADERS
 Engine/DeviceSpecific/CUDA/ITMColorTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMCUDAUtils.h
+Engine/DeviceSpecific/CUDA/ITMDepthDefaultTracker_CUDA.h
+Engine/DeviceSpecific/CUDA/ITMDepthMocapTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMDepthTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMWeightedICPTracker_CUDA.h
 Engine/DeviceSpecific/CUDA/ITMLowLevelEngine_CUDA.h
@@ -138,6 +146,7 @@ Objects/ITMTemplatedHierarchyLevel.h
 Objects/ITMTrackingState.h
 Objects/ITMView.h
 Objects/ITMViewIMU.h
+Objects/ITMViewMocap.h
 Objects/ITMViewHierarchyLevel.h
 Objects/ITMRenderState.h
 Objects/ITMRenderState_VH.h
@@ -200,6 +209,10 @@ SOURCE_GROUP(Utils FILES ${ITMLIB_UTILS_SOURCES} ${ITMLIB_UTILS_HEADERS})
 # Specify the include directories, target and link libraries #
 ##############################################################
 
+# Include eigen and extensions (from Core).
+include_directories(../../../) # This path is used to find headers from [Core] and [System].
+include_directories(${EIGEN_INCLUDE_DIRS})
+
 if(WITH_CUDA)
   if(NOT DEFINED CUDA_COMPUTE_CAPABILITY)
     include(${PROJECT_SOURCE_DIR}/cmake/CUDACheckCompute.cmake)
@@ -221,4 +234,6 @@ else()
   add_library(ITMLib ${ITMLIB_CPU_OBJECTS} ${ITMLIB_COMMON_OBJECTS})
 endif()
 
-target_link_libraries(ITMLib Utils)
+target_link_libraries(ITMLib
+    Utils
+    Core)

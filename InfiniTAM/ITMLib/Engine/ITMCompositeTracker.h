@@ -51,7 +51,7 @@ namespace ITMLib
 
 			// Suppress the default copy constructor and assignment operator
 			ITMCompositeTracker(const ITMCompositeTracker&);
-			ITMCompositeTracker& operator=(const ITMCompositeTracker&);
+            ITMCompositeTracker& operator=(const ITMCompositeTracker&);
 		};
 	}
 }

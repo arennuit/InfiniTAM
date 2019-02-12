@@ -22,9 +22,10 @@
 #define ROUND(x) ((x < 0) ? (x - 0.5f) : (x + 0.5f))
 #endif
 
-#ifndef PI
-#define PI float(3.1415926535897932384626433832795)
-#endif
+namespace ORUtils
+{
+const float PI = 3.1415926535897932384626433832795;
+}
 
 #ifndef DEGTORAD
 #define DEGTORAD float(0.017453292519943295769236907684886)

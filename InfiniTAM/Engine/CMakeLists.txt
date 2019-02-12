@@ -1,6 +1,10 @@
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
 
+# Include eigen and extensions (from Core).
+include_directories(../../../) # This path is used to find headers from [Core] and [System].
+include_directories(${EIGEN_INCLUDE_DIRS})
+
 IF(WITH_CUDA)
   include_directories(${CUDA_INCLUDE_DIRS})
 ELSE()
@@ -39,6 +43,12 @@ OpenNIEngine.cpp
 OpenNIEngine.h
 LibUVCEngine.cpp
 LibUVCEngine.h
+MocapSourceEngine.cpp
+MocapSourceEngine.h
+MocapFileEngine.cpp
+MocapFileEngine.h
+MocapViveEngine.cpp
+MocapViveEngine.h
 UIEngine.cpp
 UIEngine.h
 CLIEngine.cpp
@@ -50,6 +60,7 @@ RealSenseEngine.h
 target_link_libraries(Engine ${GLUT_LIBRARIES})
 target_link_libraries(Engine ${OPENGL_LIBRARIES})
 target_link_libraries(Engine ITMLib)
+target_link_libraries(Engine Core)
 IF(WITH_CUDA)
   target_link_libraries(Engine ${CUDA_LIBRARY})
 ENDIF()
@@ -63,3 +74,8 @@ IF(WITH_REALSENSE)
   TARGET_LINK_LIBRARIES(Engine ${RealSense_LIBRARY})
 ENDIF()
 
+IF(OpenVR_FOUND)
+    TARGET_LINK_LIBRARIES(Engine OpenVR::OpenVR)
+ELSE()
+    TARGET_COMPILE_DEFINITIONS(Engine PRIVATE COMPILE_WITHOUT_OPENVR)
+ENDIF()

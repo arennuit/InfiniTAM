@@ -22,6 +22,25 @@
 using namespace InfiniTAM::Engine;
 UIEngine* UIEngine::instance;
 
+////////////////////////////////////////////////////////////////////////////////
+UIEngine::UIEngine() :
+    isRecording_km1(false),
+    isRecording(false)
+{
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+UIEngine::~UIEngine()
+{
+    if ( m_trackingState_file.is_open() )
+        m_trackingState_file.close();
+
+    if ( m_mocap_file.is_open() )
+        m_mocap_file.close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 static void safe_glutBitmapString(void *font, const char *str)
 {
 	size_t len = strlen(str);
@@ -30,6 +49,7 @@ static void safe_glutBitmapString(void *font, const char *str)
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutDisplayFunction()
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -97,6 +117,7 @@ void UIEngine::glutDisplayFunction()
 	uiEngine->needsRefresh = false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutIdleFunction()
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -145,6 +166,7 @@ void UIEngine::glutIdleFunction()
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -152,7 +174,7 @@ void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 	switch (key)
 	{
 	case 'n':
-		printf("processing one frame ...\n");
+//		printf("processing one frame ...\n");
 		uiEngine->mainLoopAction = UIEngine::PROCESS_FRAME;
 		break;
 	case 'b':
@@ -162,12 +184,14 @@ void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 	case 's':
 		if (uiEngine->isRecording)
 		{
-			printf("stopped recoding disk ...\n");
+            printf("-------------------------------------------------------\n");
+            printf("stopped recording disk ...\n");
 			uiEngine->isRecording = false;
 		}
 		else
 		{
-			printf("started recoding disk ...\n");
+            printf("-------------------------------------------------------\n");
+            printf("started recording disk ...\n");
 			uiEngine->currentFrameNo = 0;
 			uiEngine->isRecording = true;
 		}
@@ -272,6 +296,7 @@ static inline Matrix3f createRotation(const Vector3f & _axis, float angle)
 	return ret;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutMouseMoveFunction(int x, int y)
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -320,6 +345,7 @@ void UIEngine::glutMouseMoveFunction(int x, int y)
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::glutMouseWheelFunction(int button, int dir, int x, int y)
 {
 	UIEngine *uiEngine = UIEngine::Instance();
@@ -330,8 +356,13 @@ void UIEngine::glutMouseWheelFunction(int button, int dir, int x, int y)
 	uiEngine->needsRefresh = true;
 }
 
-void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSource, IMUSourceEngine *imuSource, ITMMainEngine *mainEngine,
-	const char *outFolder, ITMLibSettings::DeviceType deviceType)
+////////////////////////////////////////////////////////////////////////////////
+void UIEngine::Initialise(int & argc, char** argv,
+                          ImageSourceEngine *imageSource,
+                          IMUSourceEngine *imuSource,
+                          MocapSourceEngine *mocapSource,
+                          ITMMainEngine *mainEngine,
+                          const char *outFolder, ITMLibSettings::DeviceType deviceType)
 {
 	this->freeviewActive = false;
 	this->intergrationActive = true;
@@ -342,6 +373,7 @@ void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSourc
 
 	this->imageSource = imageSource;
 	this->imuSource = imuSource;
+    this->mocapSource = mocapSource;
 	this->mainEngine = mainEngine;
 	{
 		size_t len = strlen(outFolder);
@@ -370,6 +402,7 @@ void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSourc
 	winReg[1] = Vector4f(0.665f, h2, 1.0f, 1.0f);   // Side sub window 0
 	winReg[2] = Vector4f(0.665f, h1, 1.0f, h2);     // Side sub window 2
 
+    this->isRecording_km1 = false;
 	this->isRecording = false;
 	this->currentFrameNo = 0;
 
@@ -396,9 +429,10 @@ void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSourc
 	for (int w = 0; w < NUM_WIN; w++)
 		outImage[w] = new ITMUChar4Image(imageSource->getDepthImageSize(), true, allocateGPU);
 
-	inputRGBImage = new ITMUChar4Image(imageSource->getRGBImageSize(), true, allocateGPU);
-	inputRawDepthImage = new ITMShortImage(imageSource->getDepthImageSize(), true, allocateGPU);
-	inputIMUMeasurement = new ITMIMUMeasurement();
+    inputRGBImage           = new ITMUChar4Image(imageSource->getRGBImageSize(), true, allocateGPU);
+    inputRawDepthImage      = new ITMShortImage(imageSource->getDepthImageSize(), true, allocateGPU);
+    inputIMUMeasurement     = new ITMIMUMeasurement();
+    m_inputMocapMeasurement = new Eigen::Framef();
 
 	saveImage = new ITMUChar4Image(imageSource->getDepthImageSize(), true, false);
 
@@ -427,6 +461,7 @@ void UIEngine::Initialise(int & argc, char** argv, ImageSourceEngine *imageSourc
 	printf("initialised.\n");
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::SaveScreenshot(const char *filename) const
 {
 	ITMUChar4Image screenshot(getWindowSize(), true, false);
@@ -434,63 +469,143 @@ void UIEngine::SaveScreenshot(const char *filename) const
 	SaveImageToFile(&screenshot, filename, true);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::SaveSceneToMesh(const char *filename) const
 {
 	mainEngine->SaveSceneToMesh(filename);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::SavePointsCloudToPcdFile(const char *filename) const
 {
     mainEngine->SavePointsCloudToPcdFile(filename);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::GetScreenshot(ITMUChar4Image *dest) const
 {
 	glReadPixels(0, 0, dest->noDims.x, dest->noDims.y, GL_RGBA, GL_UNSIGNED_BYTE, dest->GetData(MEMORYDEVICE_CPU));
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::ProcessFrame()
 {
-	if (!imageSource->hasMoreImages()) return;
+    // Check new image available
+    // NOTE: new rgb AND new depth need to be available.
+    if (!imageSource->hasMoreImages())
+        return;
+
+    // Get the new images.
 	imageSource->getImages(inputRGBImage, inputRawDepthImage);
 
-	if (imuSource != NULL) {
-		if (!imuSource->hasMoreMeasurements()) return;
-		else imuSource->getMeasurement(inputIMUMeasurement);
+    // Get the new IMU reading.
+    if (imuSource != 0)
+    {
+        if (!imuSource->hasMoreMeasurements())
+            return;
+
+        imuSource->getMeasurement(inputIMUMeasurement);
 	}
 
-	if (isRecording)
-	{
-		char str[250];
+    // Get the new mocap reading.
+    bool mocapFrameIsValid = false;
+    if (mocapSource != 0)
+    {
+        if (!mocapSource->hasMoreMeasurements())
+            return;
 
-		sprintf(str, "%s/%04d.pgm", outFolder, currentFrameNo);
-		SaveImageToFile(inputRawDepthImage, str);
+        mocapFrameIsValid = mocapSource->getMeasurement(*m_inputMocapMeasurement) == MocapSourceEngine::MEASUREMENT_OK;
+//        std::clog << "MOCAP:" << mocapFrameIsValid << ' ' << *m_inputMocapMeasurement << std::endl;
+    }
 
-		if (inputRGBImage->noDims != Vector2i(0,0)) {
-			sprintf(str, "%s/%04d.ppm", outFolder, currentFrameNo);
-			SaveImageToFile(inputRGBImage, str);
-		}
-	}
-
+    // Actual processing.
 	sdkResetTimer(&timer_instant);
 	sdkStartTimer(&timer_instant); sdkStartTimer(&timer_average);
 
-	//actual processing on the mailEngine
-	if (imuSource != NULL) mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, inputIMUMeasurement);
-	else mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage);
+    if (imuSource != 0)
+        mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, inputIMUMeasurement);
+    else if (mocapFrameIsValid)
+        mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage, 0, m_inputMocapMeasurement);
+    else
+        mainEngine->ProcessFrame(inputRGBImage, inputRawDepthImage);
 
 #ifndef COMPILE_WITHOUT_CUDA
 	ITMSafeCall(cudaThreadSynchronize());
 #endif
 	sdkStopTimer(&timer_instant); sdkStopTimer(&timer_average);
 
-	//processedTime = sdkGetTimerValue(&timer_instant);
-	processedTime = sdkGetAverageTimerValue(&timer_average);
+    processedTime = sdkGetAverageTimerValue(&timer_average); //processedTime = sdkGetTimerValue(&timer_instant);
 
+    // Recording.
+    if ( isRecording )
+    {
+        // Depth + RGB images.
+        char str[250];
+        sprintf(str, "%s/%04d.pgm", outFolder, currentFrameNo);
+        SaveImageToFile(inputRawDepthImage, str);
+
+        if (inputRGBImage->noDims != Vector2i(0,0)) {
+            sprintf(str, "%s/%04d.ppm", outFolder, currentFrameNo);
+            SaveImageToFile(inputRGBImage, str);
+        }
+
+        // Tracking state.
+        if ( isRecording_km1 == false )
+        {
+            char strTracking[250];
+            sprintf( strTracking, "%s/trackingState.dat", outFolder );
+            m_trackingState_file.open( strTracking );
+        }
+
+        ITMLib::Objects::ITMTrackingState *trackingState = mainEngine->GetTrackingState();
+        ITMPose pos_d_inv( trackingState->pose_d->GetInvM() );
+        Eigen::Framef f_cam_cam0;
+        PoseToFrame( f_cam_cam0, pos_d_inv );
+
+        m_trackingState_file << currentFrameNo + 1 << " " << f_cam_cam0.m_pos.x()  << " " << f_cam_cam0.m_pos.y()  << " " << f_cam_cam0.m_pos.z() << " "
+                                                          << f_cam_cam0.m_quat.x() << " " << f_cam_cam0.m_quat.y() << " " << f_cam_cam0.m_quat.z() << " " << f_cam_cam0.m_quat.w() << std::endl;
+
+        // Mocap.
+        if ( mocapSource )
+        {
+            // Open the mocap file.
+            if ( isRecording_km1 == false )
+            {
+                char strMocap[250];
+                sprintf( strMocap, "%s/viveTraj.dat", outFolder );
+                m_mocap_file.open( strMocap );
+            }
+
+            static Eigen::Framef f_mocap0_base = *m_inputMocapMeasurement;
+            Eigen::Framef        f_mocap_base  = *m_inputMocapMeasurement;
+            Eigen::Framef        f_mocap_mocap0 = f_mocap0_base.getInverse() * f_mocap_base;
+            m_mocap_file << currentFrameNo + 1 << " " << f_mocap_mocap0.m_pos.x()  << " " << f_mocap_mocap0.m_pos.y()  << " " << f_mocap_mocap0.m_pos.z() << " "
+                                                      << f_mocap_mocap0.m_quat.x() << " " << f_mocap_mocap0.m_quat.y() << " " << f_mocap_mocap0.m_quat.z() << " " << f_mocap_mocap0.m_quat.w() << std::endl;
+        }
+    }
+    else if ( isRecording_km1 == true)
+    {
+        // Tracking state.
+        m_trackingState_file.close();
+
+        // Mocap.
+        if ( mocapSource )
+            m_mocap_file.close();
+    }
+
+    isRecording_km1 = isRecording;
+
+    // Prepare next frame.
 	currentFrameNo++;
 }
 
-void UIEngine::Run() { glutMainLoop(); }
+////////////////////////////////////////////////////////////////////////////////
+void UIEngine::Run()
+{
+    glutMainLoop();
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void UIEngine::Shutdown()
 {
 	sdkDeleteTimer(&timer_instant);
@@ -502,9 +617,23 @@ void UIEngine::Shutdown()
 	delete inputRGBImage;
 	delete inputRawDepthImage;
 	delete inputIMUMeasurement;
+    delete m_inputMocapMeasurement;
 
 	delete[] outFolder;
 	delete saveImage;
 	delete instance;
 	instance = NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void UIEngine::PoseToFrame(Eigen::Framef& frame, ITMPose const& pose)
+{
+    Matrix4f pose_mat = pose.GetM();
+    Eigen::Matrix4f frame_mat;
+    frame_mat << pose_mat.m[0], pose_mat.m[4], pose_mat.m[ 8], pose_mat.m[12],
+                 pose_mat.m[1], pose_mat.m[5], pose_mat.m[ 9], pose_mat.m[13],
+                 pose_mat.m[2], pose_mat.m[6], pose_mat.m[10], pose_mat.m[14],
+                 pose_mat.m[3], pose_mat.m[7], pose_mat.m[11], pose_mat.m[15];
+
+    frame = Eigen::Framef(frame_mat);
 }

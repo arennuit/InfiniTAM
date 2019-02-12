@@ -7,32 +7,40 @@
 
 using namespace ITMLib::Engine;
 
-struct ITMDepthTracker_CUDA::AccuCell {
+////////////////////////////////////////////////////////////////////////////////
+struct ITMDepthTracker_CUDA::AccuCell
+{
 	int numPoints;
 	float f;
 	float g[6];
 	float h[6+5+4+3+2+1];
 };
 
-struct ITMDepthTracker_KernelParameters {
-	ITMDepthTracker_CUDA::AccuCell *accu;
+////////////////////////////////////////////////////////////////////////////////
+struct ITMDepthTracker_KernelParameters
+{
+    ITMDepthTracker_CUDA::AccuCell *accu;
 	float *depth;
 	Matrix4f approxInvPose;
 	Vector4f *pointsMap;
 	Vector4f *normalsMap;
 	Vector4f sceneIntrinsics;
 	Vector2i sceneImageSize;
-	Matrix4f scenePose;
+    Matrix4f scenePose;
 	Vector4f viewIntrinsics;
 	Vector2i viewImageSize;
 	float distThresh;
 };
 
+////////////////////////////////////////////////////////////////////////////////
 template<bool shortIteration, bool rotationOnly>
 __global__ void depthTrackerOneLevel_g_rt_device(ITMDepthTracker_KernelParameters para);
 
+////////////////////////////////////////////////////////////////////////////////
 // host methods
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
 ITMDepthTracker_CUDA::ITMDepthTracker_CUDA(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel,
 	float distThresh, float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine)
 	:ITMDepthTracker(imgSize, trackingRegime, noHierarchyLevels, noICPRunTillLevel, distThresh, terminationThreshold, lowLevelEngine, MEMORYDEVICE_CUDA)
@@ -41,12 +49,14 @@ ITMDepthTracker_CUDA::ITMDepthTracker_CUDA(Vector2i imgSize, TrackerIterationTyp
 	ITMSafeCall(cudaMalloc((void**)&accu_device, sizeof(AccuCell)));
 }
 
+////////////////////////////////////////////////////////////////////////////////
 ITMDepthTracker_CUDA::~ITMDepthTracker_CUDA(void)
 {
 	ITMSafeCall(cudaFreeHost(accu_host));
 	ITMSafeCall(cudaFree(accu_device));
 }
 
+////////////////////////////////////////////////////////////////////////////////
 int ITMDepthTracker_CUDA::ComputeGandH(float &f, float *nabla, float *hessian, Matrix4f approxInvPose)
 {
 	Vector4f *pointsMap = sceneHierarchyLevel->pointsMap->GetData(MEMORYDEVICE_CUDA);
@@ -77,7 +87,7 @@ int ITMDepthTracker_CUDA::ComputeGandH(float &f, float *nabla, float *hessian, M
 	args.normalsMap = normalsMap;
 	args.sceneIntrinsics = sceneIntrinsics;
 	args.sceneImageSize = sceneImageSize;
-	args.scenePose = scenePose;
+    args.scenePose = scenePose;
 	args.viewIntrinsics = viewIntrinsics;
 	args.viewImageSize = viewImageSize;
 	args.distThresh = distThresh[levelId];
@@ -107,14 +117,18 @@ int ITMDepthTracker_CUDA::ComputeGandH(float &f, float *nabla, float *hessian, M
 	return accu_host->numPoints;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 // device functions
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
 template<bool shortIteration, bool rotationOnly>
 __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::AccuCell *accu, float *depth, Matrix4f approxInvPose, Vector4f *pointsMap,
 	Vector4f *normalsMap, Vector4f sceneIntrinsics, Vector2i sceneImageSize, Matrix4f scenePose, Vector4f viewIntrinsics, Vector2i viewImageSize,
 	float distThresh)
 {
-	int x = threadIdx.x + blockIdx.x * blockDim.x, y = threadIdx.y + blockIdx.y * blockDim.y;
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
 
 	int locId_local = threadIdx.x + threadIdx.y * blockDim.x;
 
@@ -268,9 +282,10 @@ __device__ void depthTrackerOneLevel_g_rt_device_main(ITMDepthTracker_CUDA::Accu
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 template<bool shortIteration, bool rotationOnly>
 __global__ void depthTrackerOneLevel_g_rt_device(ITMDepthTracker_KernelParameters para)
 {
-	depthTrackerOneLevel_g_rt_device_main<shortIteration, rotationOnly>(para.accu, para.depth, para.approxInvPose, para.pointsMap, para.normalsMap, para.sceneIntrinsics, para.sceneImageSize, para.scenePose, para.viewIntrinsics, para.viewImageSize, para.distThresh);
+    depthTrackerOneLevel_g_rt_device_main<shortIteration, rotationOnly>(para.accu, para.depth, para.approxInvPose, para.pointsMap, para.normalsMap, para.sceneIntrinsics, para.sceneImageSize, para.scenePose, para.viewIntrinsics, para.viewImageSize, para.distThresh);
 }
 

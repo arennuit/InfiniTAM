@@ -11,6 +11,7 @@ using namespace ORUtils;
 ITMViewBuilder_CPU::ITMViewBuilder_CPU(const ITMRGBDCalib *calib):ITMViewBuilder(calib) { }
 ITMViewBuilder_CPU::~ITMViewBuilder_CPU(void) { }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *rawDepthImage, bool useBilateralFilter, bool modelSensorNoise)
 { 
 	if (*view_ptr == NULL)
@@ -63,6 +64,7 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMFloatImage *depthImage)
 {
 	if (*view_ptr == NULL)
@@ -74,6 +76,7 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
 	view->depth->UpdateDeviceFromHost();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, ITMIMUMeasurement *imuMeasurement)
 {
 	if (*view_ptr == NULL)
@@ -91,6 +94,39 @@ void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage
 	this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ITMViewBuilder_CPU::UpdateView(ITMView **view_ptr, ITMUChar4Image *rgbImage, ITMShortImage *depthImage, bool useBilateralFilter, Eigen::Framef *mocapMeasurement)
+{
+    if (*view_ptr == NULL)
+    {
+        *view_ptr = new ITMViewMocap(calib, rgbImage->noDims, depthImage->noDims, false);
+
+        if (this->shortImage != NULL) delete this->shortImage;
+        this->shortImage = new ITMShortImage(depthImage->noDims, true, false);
+        if (this->floatImage != NULL) delete this->floatImage;
+        this->floatImage = new ITMFloatImage(depthImage->noDims, true, false);
+    }
+
+    // Update view.
+    ITMViewMocap* mocapView = (ITMViewMocap*)(*view_ptr);
+
+    static bool isFirst = true;
+    if ( isFirst == true )
+    {
+        isFirst = false;
+        mocapView->m_f_tracker_mocapBase = *mocapMeasurement;
+        mocapView->m_f_trackerKm1_mocapBase = mocapView->m_f_tracker_mocapBase;
+    }
+    else
+    {
+        mocapView->m_f_trackerKm1_mocapBase = mocapView->m_f_tracker_mocapBase;
+        mocapView->m_f_tracker_mocapBase = *mocapMeasurement;
+    }
+
+    this->UpdateView(view_ptr, rgbImage, depthImage, useBilateralFilter);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CPU::ConvertDisparityToDepth(ITMFloatImage *depth_out, const ITMShortImage *depth_in, const ITMIntrinsics *depthIntrinsics,
 	Vector2f disparityCalibParams)
 {
@@ -105,6 +141,7 @@ void ITMViewBuilder_CPU::ConvertDisparityToDepth(ITMFloatImage *depth_out, const
 		convertDisparityToDepth(d_out, x, y, d_in, disparityCalibParams, fx_depth, imgSize);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CPU::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, const ITMShortImage *depth_in, const Vector2f depthCalibParams)
 {
 	Vector2i imgSize = depth_in->noDims;
@@ -116,6 +153,7 @@ void ITMViewBuilder_CPU::ConvertDepthAffineToFloat(ITMFloatImage *depth_out, con
 		convertDepthAffineToFloat(d_out, x, y, d_in, imgSize, depthCalibParams);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMViewBuilder_CPU::DepthFiltering(ITMFloatImage *image_out, const ITMFloatImage *image_in)
 {
 	Vector2i imgSize = image_in->noDims;
@@ -129,6 +167,7 @@ void ITMViewBuilder_CPU::DepthFiltering(ITMFloatImage *image_out, const ITMFloat
 		filterDepth(imout, imin, x, y, imgSize);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ITMLib::Engine::ITMViewBuilder_CPU::ComputeNormalAndWeights(ITMFloat4Image *normal_out, ITMFloatImage *sigmaZ_out, const ITMFloatImage *depth_in, Vector4f intrinsic)
 {
 	Vector2i imgDims = depth_in->noDims;

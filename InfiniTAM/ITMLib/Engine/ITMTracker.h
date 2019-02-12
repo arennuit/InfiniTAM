@@ -19,8 +19,8 @@ namespace ITMLib
 		*/
 		class ITMTracker
 		{
-		public:
-			/** Localize a View in the given scene. The result is
+        public:
+            /** Localize a View in the given scene. The result is
 			    currently stored as an attribute in trackingState.
 			*/
 			virtual void TrackCamera(ITMTrackingState *trackingState, const ITMView *view) = 0;

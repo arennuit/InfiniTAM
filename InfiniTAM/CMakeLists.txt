@@ -30,14 +30,18 @@ find_package(PNG QUIET)
 CANONIFY_BOOL(PNG_FOUND)
 message(STATUS "libpng found: ${PNG_FOUND}")
 
+find_package(OpenVR QUIET)
+CANONIFY_BOOL(OpenVR_FOUND)
+message(STATUS "OpenVR found: ${OPENVR_FOUND}")
+
 # Eigen & PCL.
 # NOTE: We also make sure to leave CMAKE_MODULE_PATH and CMAKE_PREFIX_PATH's
 #       value unchanged (as cmake complains about CUDA otherwise).
 set(CMAKE_MODULE_PATH_OLD ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH_OLD ${CMAKE_PREFIX_PATH})
 
-set(CMAKE_MODULE_PATH ../../../Dependencies/Eigen/v3.3.5/share/eigen3/cmake)
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../../Dependencies/Eigen/v3.3.5/)
+set(CMAKE_MODULE_PATH ../../../Dependencies/Eigen/v_f3137d73/share/eigen3/cmake)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ../../../Dependencies/Eigen/v_f3137d73/)
 find_package(Eigen3 REQUIRED)
 
 
@@ -73,9 +77,9 @@ IF(MSVC_IDE)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-DUSING_CMAKE=1)
 ELSE(MSVC_IDE)
-  set(CFLAGS_WARN "-Wall -Wextra -Wno-unused-parameter -Wno-strict-aliasing")
-  set(CMAKE_CXX_FLAGS "-fPIC -O3 -march=native ${CFLAGS_WARN} ${CMAKE_CXX_FLAGS}")
-  #set(CMAKE_CXX_FLAGS "-fPIC -g ${CFLAGS_WARN} ${CMAKE_CXX_FLAGS}")
+  set(CFLAGS_WARN "-Wno-unused-parameter -Wno-strict-aliasing")
+  set(CMAKE_CXX_FLAGS "-fPIC -march=native ${CFLAGS_WARN} ${CMAKE_CXX_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 ENDIF(MSVC_IDE)
 
 if(APPLE)
