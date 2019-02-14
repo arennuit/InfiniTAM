@@ -20,15 +20,14 @@ MocapViveEngine::MocapViveEngine(std::vector<std::string> const& devicesToTrack)
     m_vrSystem (nullptr),
     m_trackedDeviceIdx (vr::k_unTrackedDeviceIndexInvalid)
 {
+    // OpenVR: init.
     vr::EVRInitError eError = vr::VRInitError_None;
 
     m_vrSystem = vr::VR_Init(&eError, vr::VRApplication_Other);
-
     if (eError != vr::VRInitError_None)
     {
         m_vrSystem = nullptr;
-        throw std::runtime_error(std::string("Impossible to load VR runtime: ")
-                                 + vr::VR_GetVRInitErrorAsEnglishDescription(eError));
+        throw std::runtime_error(std::string("Impossible to load VR runtime: ") + vr::VR_GetVRInitErrorAsEnglishDescription(eError));
     }
 }
 
@@ -60,7 +59,7 @@ MocapViveEngine::MeasurementStatus MocapViveEngine::getMeasurement(Eigen::Framef
     if (m_trackedDeviceIdx == vr::k_unTrackedDeviceIndexInvalid
             || !m_vrSystem->IsTrackedDeviceConnected(m_trackedDeviceIdx))
     {
-        // We do not yet have found a device, or it is lost.
+        // We do not yet have found a device (or it is lost).
 
         for (vr::TrackedDeviceIndex_t deviceIdx = 0; deviceIdx < trackedDevicePoses.size(); ++deviceIdx)
         {
@@ -69,7 +68,7 @@ MocapViveEngine::MeasurementStatus MocapViveEngine::getMeasurement(Eigen::Framef
                 continue;
 
             // Try to retrieve the model name
-            std::array<char,1024> buf;
+            std::array<char, 1024> buf;
             vr::TrackedPropertyError propertyError;
             m_vrSystem->GetStringTrackedDeviceProperty(deviceIdx,
                                                        vr::Prop_RenderModelName_String,
@@ -81,25 +80,25 @@ MocapViveEngine::MeasurementStatus MocapViveEngine::getMeasurement(Eigen::Framef
             std::string deviceName (buf.data());
 
             // Check if we want to track this device
-            if (std::find(m_devicesToTrack.begin(), m_devicesToTrack.end(), deviceName) == m_devicesToTrack.end())
+            if (std::find( m_devicesToTrack.begin(), m_devicesToTrack.end(), deviceName) == m_devicesToTrack.end() )
                 continue;
 
             // This device is valid, we track it.
             m_trackedDeviceIdx = deviceIdx;
             std::clog << "Start tracking device " << m_trackedDeviceIdx << ' ' << deviceName << std::endl;
 
-            return getMeasurement(trackedDevicePoses[deviceIdx], mocapFrame);
+            return isMeasurementValid(trackedDevicePoses[deviceIdx], mocapFrame);
         }
 
         std::clog << "No device found" << std::endl;
         return MEASUREMENT_ERROR;
     }
 
-    return getMeasurement(trackedDevicePoses[m_trackedDeviceIdx], mocapFrame);
+    return isMeasurementValid(trackedDevicePoses[m_trackedDeviceIdx], mocapFrame);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-MocapViveEngine::MeasurementStatus MocapViveEngine::getMeasurement(vr::TrackedDevicePose_t const& devicePos,
+MocapViveEngine::MeasurementStatus MocapViveEngine::isMeasurementValid(vr::TrackedDevicePose_t const& devicePos,
                                                                    Eigen::Framef& mocapFrame)
 {
     if (!devicePos.bPoseIsValid)

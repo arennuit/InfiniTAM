@@ -31,7 +31,7 @@ private:
     static float copysign(float number, float sign);
     static void hmdToFrame(vr::HmdMatrix34_t const& matrix, Eigen::Framef& mocapFrame);
 
-    MeasurementStatus getMeasurement(vr::TrackedDevicePose_t const& devicePos, Eigen::Framef& mocapFrame);
+    MeasurementStatus isMeasurementValid(vr::TrackedDevicePose_t const& devicePos, Eigen::Framef& mocapFrame);
 
     const std::vector<std::string> m_devicesToTrack;
 

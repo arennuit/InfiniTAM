@@ -17,10 +17,11 @@ public:
     enum MeasurementStatus
     {
         MEASUREMENT_OK,
+
         MEASUREMENT_CALIBRATING,
         MEASUREMENT_OUT_OF_RANGE,
-        /// \brief Fallback error code, when not out of range or calibrating
-        MEASUREMENT_ERROR
+
+        MEASUREMENT_ERROR ///< \brief Fallback error code, when not out of range or calibrating.
     };
 
     virtual ~MocapSourceEngine();
