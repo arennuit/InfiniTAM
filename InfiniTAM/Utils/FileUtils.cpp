@@ -3,6 +3,7 @@
 #include "FileUtils.h"
 
 #include <stdio.h>
+#include <iostream>
 #include <fstream>
 
 #ifdef USE_LIBPNG
@@ -251,6 +252,11 @@ static bool pnm_writedata(FILE *f, int xsize, int ysize, FormatType type, const 
 void SaveImageToFile(const ITMUChar4Image* image, const char* fileName, bool flipVertical)
 {
 	FILE *f = fopen(fileName, "wb");
+	if (!f) {
+		std::clog << "Could not open \"" << fileName << "\", did you created the folder?" << std::endl;
+		return;
+	}
+
 	if (!pnm_writeheader(f, image->noDims.x, image->noDims.y, RGB_8u)) {
 		fclose(f); return;
 	}
@@ -288,14 +294,20 @@ void SaveImageToFile(const ITMUChar4Image* image, const char* fileName, bool fli
 
 void SaveImageToFile(const ITMShortImage* image, const char* fileName)
 {
+	FILE *f = fopen(fileName, "wb");
+	if (!f) {
+		std::clog << "Could not open \"" << fileName << "\", did you created the folder?" << std::endl;
+		return;
+	}
+
+	if (!pnm_writeheader(f, image->noDims.x, image->noDims.y, MONO_16u)) {
+		fclose(f); return;
+	}
+
 	short *data = (short*)malloc(sizeof(short) * image->dataSize);
 	const short *dataSource = image->GetData(MEMORYDEVICE_CPU);
 	for (size_t i = 0; i < image->dataSize; i++) data[i] = (dataSource[i] << 8) | ((dataSource[i] >> 8) & 255);
 
-	FILE *f = fopen(fileName, "wb");
-	if (!pnm_writeheader(f, image->noDims.x, image->noDims.y, MONO_16u)) {
-		fclose(f); return;
-	}
 	pnm_writedata(f, image->noDims.x, image->noDims.y, MONO_16u, data);
 	fclose(f);
 
@@ -304,6 +316,16 @@ void SaveImageToFile(const ITMShortImage* image, const char* fileName)
 
 void SaveImageToFile(const ITMFloatImage* image, const char* fileName)
 {
+	FILE *f = fopen(fileName, "wb");
+	if (!f) {
+		std::clog << "Could not open \"" << fileName << "\", did you created the folder?" << std::endl;
+		return;
+	}
+
+	if (!pnm_writeheader(f, image->noDims.x, image->noDims.y, MONO_16u)) {
+		fclose(f); return;
+	}
+
 	unsigned short *data = new unsigned short[image->dataSize];
 	for (size_t i = 0; i < image->dataSize; i++)
 	{
@@ -311,10 +333,6 @@ void SaveImageToFile(const ITMFloatImage* image, const char* fileName)
 		data[i] = localData >= 0 ? (unsigned short)(localData * 1000.0f) : 0;
 	}
 
-	FILE *f = fopen(fileName, "wb");
-	if (!pnm_writeheader(f, image->noDims.x, image->noDims.y, MONO_16u)) {
-		fclose(f); return;
-	}
 	pnm_writedata(f, image->noDims.x, image->noDims.y, MONO_16u, data);
 	fclose(f);
 
