@@ -33,6 +33,12 @@ void ITMDepthMocapTracker_CPU::PreTrackCamera( ITMTrackingState *trackingState, 
     PreTrackCamera_mocap( trackingState, view, approxInvPose );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthMocapTracker_CPU::TrackCamera( ITMTrackingState *trackingState, const ITMView *view )
+{
+    TrackCamera_mocap( trackingState, view );
+}
+
 } // namespace Engine.
 
 } // namespace ITMLib.

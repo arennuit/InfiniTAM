@@ -35,6 +35,12 @@ void ITMDepthDefaultTracker_CUDA::PreTrackCamera( ITMTrackingState *trackingStat
     PreTrackCamera_default( trackingState, view, approxInvPose );
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthDefaultTracker_CUDA::TrackCamera( ITMTrackingState *trackingState, const ITMView *view )
+{
+    TrackCamera_default( trackingState, view );
+}
+
 
 } // namespace Engine.
 

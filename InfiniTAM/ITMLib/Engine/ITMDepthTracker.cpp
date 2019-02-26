@@ -243,7 +243,19 @@ void ITMDepthTracker::PreTrackCamera_mocap( ITMTrackingState *trackingState, con
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView *view)
+void ITMDepthTracker::TrackCamera_default( ITMTrackingState *trackingState, const ITMView *view )
+{
+    doTrackCamera( trackingState, view, false );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::TrackCamera_mocap( ITMTrackingState *trackingState, const ITMView *view )
+{
+    doTrackCamera( trackingState, view, true );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ITMDepthTracker::doTrackCamera( ITMTrackingState *trackingState, const ITMView *view, bool useMocap )
 {
     // Prepare the view and scene.
     this->SetEvaluationData(trackingState, view);
@@ -260,15 +272,6 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
 
 //    // Loop on levels.
 //    Matrix4f approxInvPose_beforeICP = approxInvPose;
-
-
-    ITMViewMocap* mocapView = (ITMViewMocap*)view;
-    Eigen::Framef f_cam_tracker;
-    f_cam_tracker = PoseToFrame( view->calib->m_h_cam_beacon.calib );
-    static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
-    Eigen::Framef f_bK_0    = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase   * f_cam_tracker;
-
-    Eigen::Framef f_bKm1_0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_trackerKm1_mocapBase * f_cam_tracker;
 
 
     float f_new;
@@ -358,7 +361,18 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         }
     }
 
+    if ( !useMocap )
+        return;
+
     // Space decomposition.
+    ITMViewMocap* mocapView = (ITMViewMocap*)view;
+    Eigen::Framef f_cam_tracker;
+    f_cam_tracker = PoseToFrame( view->calib->m_h_cam_beacon.calib );
+    static Eigen::Framef f_cam0_mocapBase = mocapView->m_f_tracker_mocapBase * f_cam_tracker;
+    Eigen::Framef f_bK_0    = f_cam0_mocapBase.getInverse() * mocapView->m_f_tracker_mocapBase   * f_cam_tracker;
+
+    Eigen::Framef f_bKm1_0 = f_cam0_mocapBase.getInverse() * mocapView->m_f_trackerKm1_mocapBase * f_cam_tracker;
+
     Eigen::Framef f_km1_0 = MatToFrame( mat_km1_0 );
     Eigen::Framef f_icp_0 = MatToFrame( approxInvPose );
 
@@ -421,29 +435,29 @@ void ITMDepthTracker::TrackCamera(ITMTrackingState *trackingState, const ITMView
         Eigen::Vector3f v_k_km1_0 = q_V_0 * v_k_km1_V;
 
         p_k_0 = f_km1_0.m_pos + v_k_km1_0;
-    }
 
-//    // DEBUG.
-//    static int i = 0;
-//    std::cout << "idx : " << i << std::endl;
-//    std::cout << "\033[1;31m";
-//    if ( S(0) / S(1) > 10.0f )
-//        std::cout << "Component 1" << std::endl;
-//    if ( S(0) / S(2) > 10.0f )
-//        std::cout << "Component 2" << std::endl;
-//    if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
-//    {
-//        std::cout << "\n   " << "v_icp_km1_0 : " << std::endl << v_icp_km1_0 << std::endl;
-//        std::cout << "\n   " << "v_bK_bKm1_0 : " << std::endl << v_bK_bKm1_0 << std::endl;
-//        std::cout << "\n   " << "v_icp_km1_V : " << std::endl << v_icp_km1_V << std::endl;
-//        std::cout << "\n   " << "v_bK_bKm1_V : " << std::endl << v_bK_bKm1_V << std::endl;
-//        std::cout << "\n   " << "v_k_km1_V : "   << std::endl << v_k_km1_V   << std::endl;
-//        std::cout << "\n   " << "v_k_km1_0 : "   << std::endl << v_k_km1_0   << std::endl;
-//        std::cout << "\n   " << "f_k_0.m_pos : " << std::endl << f_k_0.m_pos << std::endl;
-//    }
-//    std::cout << "\033[0m\n";
-//    ++i;
-//    // END DEBUG.
+//        // DEBUG.
+//        static int i = 0;
+//        std::cout << "idx : " << i << std::endl;
+//        std::cout << "\033[1;31m";
+//        if ( S(0) / S(1) > 10.0f )
+//            std::cout << "Component 1" << std::endl;
+//        if ( S(0) / S(2) > 10.0f )
+//            std::cout << "Component 2" << std::endl;
+//        if ( S(0) / S(1) > 10.0f ||  S(0) / S(2) > 10.0f )
+//        {
+//            std::cout << "\n   " << "v_icp_km1_0 : " << std::endl << v_icp_km1_0 << std::endl;
+//            std::cout << "\n   " << "v_bK_bKm1_0 : " << std::endl << v_bK_bKm1_0 << std::endl;
+//            std::cout << "\n   " << "v_icp_km1_V : " << std::endl << v_icp_km1_V << std::endl;
+//            std::cout << "\n   " << "v_bK_bKm1_V : " << std::endl << v_bK_bKm1_V << std::endl;
+//            std::cout << "\n   " << "v_k_km1_V   : " << std::endl << v_k_km1_V   << std::endl;
+//            std::cout << "\n   " << "v_k_km1_0   : " << std::endl << v_k_km1_0   << std::endl;
+//            std::cout << "\n   " << "p_k_0       : " << std::endl << p_k_0 << std::endl;
+//        }
+//        std::cout << "\033[0m\n";
+//        ++i;
+//        // END DEBUG.
+    }
 
     // Space decomposition: rotations.
     Eigen::Quaternionf q_k_0;

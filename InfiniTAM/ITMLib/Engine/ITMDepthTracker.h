@@ -76,8 +76,11 @@ namespace ITMLib
             void PreTrackCamera_default( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose );
             void PreTrackCamera_mocap(   ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose );
 
+            void TrackCamera_default( ITMTrackingState *trackingState, const ITMView *view );
+            void TrackCamera_mocap(   ITMTrackingState *trackingState, const ITMView *view );
+            void doTrackCamera(       ITMTrackingState *trackingState, const ITMView *view, bool useMocap );
+
         public:
-			void TrackCamera(ITMTrackingState *trackingState, const ITMView *view);
 
 			ITMDepthTracker(Vector2i imgSize, TrackerIterationType *trackingRegime, int noHierarchyLevels, int noICPRunTillLevel, float distThresh,
 				float terminationThreshold, const ITMLowLevelEngine *lowLevelEngine, MemoryDeviceType memoryType);

@@ -24,6 +24,7 @@ public:
     ~ITMDepthDefaultTracker_CUDA(void) {}
 
     void PreTrackCamera( ITMTrackingState *trackingState, const ITMView *view, Matrix4f& approxInvPose ) override;
+    void TrackCamera( ITMTrackingState *trackingState, const ITMView *view ) override;
 };
 
 } // namespace Engine.
