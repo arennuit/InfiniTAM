@@ -75,7 +75,7 @@ __global__ void computeView3dPointsIntoDisplay_device( float    const * depth,
 __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
                                       Vector2i     viewImgSize,
                                       Vector4u     color,
-                                      Vector3f     lightSource,
+                                      Vector3f     lightDirection,
                                       Vector4f     displayIntrinsics,
                                       Vector2i     displayImgSize,
                                       Vector4u    *displayImg );
@@ -425,13 +425,12 @@ void ITMVisualisationEngine_CUDA<TVoxel, ITMVoxelBlockHash>::RenderOverlay( cons
                                                                         h_view_display,
                                                                         view3dPoints_inDisplay.GetData(MEMORYDEVICE_CUDA) );
 
-    Matrix4f invM = displayPose->GetInvM();
-    Vector3f lightSource = -Vector3f( invM.getColumn(2) );
+    Vector3f lightSource_inDisplay = Vector3f( 0.0f, 0.0f, -1.0f );
 
     renderOverlay_device<<<gridSize, cudaBlockSize>>>( view3dPoints_inDisplay.GetData(MEMORYDEVICE_CUDA),
                                                        view3dPoints_inDisplay.noDims,
                                                        color,
-                                                       lightSource,
+                                                       lightSource_inDisplay,
                                                        displayIntrinsics->projectionParamsSimple.all,
                                                        renderState_display->raycastImage->noDims,
                                                        renderState_display->raycastImage->GetData(MEMORYDEVICE_CUDA) );
@@ -809,7 +808,7 @@ __global__ void computeView3dPointsIntoDisplay_device( float    const * depth,
 __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
                                       Vector2i     viewImgSize,
                                       Vector4u     color,
-                                      Vector3f     lightSource,
+                                      Vector3f     lightDirection,
                                       Vector4f     displayIntrinsics,
                                       Vector2i     displayImgSize,
                                       Vector4u    *displayImg )
@@ -822,7 +821,7 @@ __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
     int locId_local = threadIdx.x + threadIdx.y * blockDim.x;
     int locId       = x + y * viewImgSize.x;
 
-    if ( x <= 0 || x >= viewImgSize.x - 1 || y <= 0 || y >= viewImgSize.y - 1)
+    if ( x <= 2 || x >= viewImgSize.x - 3 || y <= 2 || y >= viewImgSize.y - 3 )
         return;
 
     // Project the 3d point into a pixel of the display image.
@@ -841,10 +840,10 @@ __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
         return;
 
     // Compute the normal.
-    Vector4f const & xp1_y = view3dPoints_inDisplay[ (x + 1) +  y      * viewImgSize.x ];
-    Vector4f const & x_yp1 = view3dPoints_inDisplay[  x      + (y + 1) * viewImgSize.x ];
-    Vector4f const & xm1_y = view3dPoints_inDisplay[ (x - 1) +  y      * viewImgSize.x ];
-    Vector4f const & x_ym1 = view3dPoints_inDisplay[  x      + (y - 1) * viewImgSize.x ];
+    Vector4f const & xp1_y = view3dPoints_inDisplay[ (x + 3) +  y      * viewImgSize.x ];
+    Vector4f const & x_yp1 = view3dPoints_inDisplay[  x      + (y + 3) * viewImgSize.x ];
+    Vector4f const & xm1_y = view3dPoints_inDisplay[ (x - 3) +  y      * viewImgSize.x ];
+    Vector4f const & x_ym1 = view3dPoints_inDisplay[  x      + (y - 3) * viewImgSize.x ];
 
     Vector4f diff_x( 0.0f, 0.0f, 0.0f, 0.0f );
     Vector4f diff_y( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -860,16 +859,17 @@ __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
     float normScale = 1.0f / sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
     normal *= normScale;
 
-    // Compute the normal / light angle.
-    float angle = normal.x * lightSource.x + normal.y * lightSource.y + normal.z * lightSource.z;
+    // Compute the normal / light angle (diffuse light model).
+    float cosAngle = normal.x * lightDirection.x + normal.y * lightDirection.y + normal.z * lightDirection.z;
 
-    if ( angle <= 0.0f )
-        return;
+    if ( cosAngle <= 0.0f )
+        cosAngle *= -1.0f;
 
     // Update the display image.
     int locId_display = u_d + v_d * displayImgSize.x;
 
-    displayImg[ locId_display ] = color;
+    float outRes = ( 0.8f * cosAngle + 0.2f ) * 255.0f; // Ambient + diffuse light.
+    displayImg[ locId_display ] = Vector4u( outRes, 50, 50, 50 );
 }
 
 template class ITMLib::Engine::ITMVisualisationEngine_CUDA < ITMVoxel, ITMVoxelIndex > ;
