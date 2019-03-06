@@ -199,39 +199,58 @@ _CPU_AND_GPU_CODE_ inline void computeNormalAndAngle(THREADPTR(bool) & foundPoin
 
 	if (useSmoothing)
 	{
-		if (y <= 2 || y >= imgSize.y - 3 || x <= 2 || x >= imgSize.x - 3) { foundPoint = false; return; }
+        if (y <= 2 || y >= imgSize.y - 3 || x <= 2 || x >= imgSize.x - 3)
+        {
+            foundPoint = false;
+            return;
+        }
 
-		xp1_y = pointsRay[(x + 2) + y * imgSize.x], x_yp1 = pointsRay[x + (y + 2) * imgSize.x];
-		xm1_y = pointsRay[(x - 2) + y * imgSize.x], x_ym1 = pointsRay[x + (y - 2) * imgSize.x];
+        xp1_y = pointsRay[(x + 2) + y * imgSize.x];
+        x_yp1 = pointsRay[x + (y + 2) * imgSize.x];
+        xm1_y = pointsRay[(x - 2) + y * imgSize.x];
+        x_ym1 = pointsRay[x + (y - 2) * imgSize.x];
 	}
 	else
 	{
-		if (y <= 1 || y >= imgSize.y - 2 || x <= 1 || x >= imgSize.x - 2) { foundPoint = false; return; }
+        if (y <= 1 || y >= imgSize.y - 2 || x <= 1 || x >= imgSize.x - 2)
+        {
+            foundPoint = false;
+            return;
+        }
 
-		xp1_y = pointsRay[(x + 1) + y * imgSize.x], x_yp1 = pointsRay[x + (y + 1) * imgSize.x];
-		xm1_y = pointsRay[(x - 1) + y * imgSize.x], x_ym1 = pointsRay[x + (y - 1) * imgSize.x];
+        xp1_y = pointsRay[(x + 1) + y * imgSize.x];
+        x_yp1 = pointsRay[x + (y + 1) * imgSize.x];
+        xm1_y = pointsRay[(x - 1) + y * imgSize.x];
+        x_ym1 = pointsRay[x + (y - 1) * imgSize.x];
 	}
 
-	Vector4f diff_x(0.0f, 0.0f, 0.0f, 0.0f), diff_y(0.0f, 0.0f, 0.0f, 0.0f);
+    Vector4f diff_x( 0.0f, 0.0f, 0.0f, 0.0f );
+    Vector4f diff_y( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	bool doPlus1 = false;
-	if (xp1_y.w <= 0 || x_yp1.w <= 0 || xm1_y.w <= 0 || x_ym1.w <= 0) doPlus1 = true;
+    if ( xp1_y.w <= 0 || x_yp1.w <= 0 || xm1_y.w <= 0 || x_ym1.w <= 0 )
+        doPlus1 = true;
 	else
 	{
-		diff_x = xp1_y - xm1_y, diff_y = x_yp1 - x_ym1;
+        diff_x = xp1_y - xm1_y;
+        diff_y = x_yp1 - x_ym1;
 
-		float length_diff = MAX(diff_x.x * diff_x.x + diff_x.y * diff_x.y + diff_x.z * diff_x.z,
-			diff_y.x * diff_y.x + diff_y.y * diff_y.y + diff_y.z * diff_y.z);
+        float length_diff = MAX( diff_x.x * diff_x.x + diff_x.y * diff_x.y + diff_x.z * diff_x.z,
+                                 diff_y.x * diff_y.x + diff_y.y * diff_y.y + diff_y.z * diff_y.z );
 
-		if (length_diff * voxelSize * voxelSize > (0.15f * 0.15f)) doPlus1 = true;
+        if ( length_diff * voxelSize * voxelSize > (0.15f * 0.15f) )
+            doPlus1 = true;
 	}
 
 	if (doPlus1)
 	{
 		if (useSmoothing)
 		{
-			xp1_y = pointsRay[(x + 1) + y * imgSize.x]; x_yp1 = pointsRay[x + (y + 1) * imgSize.x];
-			xm1_y = pointsRay[(x - 1) + y * imgSize.x]; x_ym1 = pointsRay[x + (y - 1) * imgSize.x];
+            xp1_y = pointsRay[(x + 1) + y * imgSize.x];
+            x_yp1 = pointsRay[x + (y + 1) * imgSize.x];
+            xm1_y = pointsRay[(x - 1) + y * imgSize.x];
+            x_ym1 = pointsRay[x + (y - 1) * imgSize.x];
+
 			diff_x = xp1_y - xm1_y; diff_y = x_yp1 - x_ym1;
 		}
 
@@ -242,15 +261,21 @@ _CPU_AND_GPU_CODE_ inline void computeNormalAndAngle(THREADPTR(bool) & foundPoin
 		}
 	}
 
-	outNormal.x = -(diff_x.y * diff_y.z - diff_x.z*diff_y.y);
-	outNormal.y = -(diff_x.z * diff_y.x - diff_x.x*diff_y.z);
-	outNormal.z = -(diff_x.x * diff_y.y - diff_x.y*diff_y.x);
+    // Normal computation.
+    // NOTE: cross-product of the X and Y tangents.
+    outNormal.x = -(diff_x.y * diff_y.z - diff_x.z * diff_y.y);
+    outNormal.y = -(diff_x.z * diff_y.x - diff_x.x * diff_y.z);
+    outNormal.z = -(diff_x.x * diff_y.y - diff_x.y * diff_y.x);
 
 	float normScale = 1.0f / sqrt(outNormal.x * outNormal.x + outNormal.y * outNormal.y + outNormal.z * outNormal.z);
 	outNormal *= normScale;
 
+    // Normal / light angle computation.
+    // NOTE: parallel light model.
 	angle = outNormal.x * lightSource.x + outNormal.y * lightSource.y + outNormal.z * lightSource.z;
-	if (!(angle > 0.0)) foundPoint = false;
+
+    if ( !(angle > 0.0) )
+        foundPoint = false;
 }
 
 _CPU_AND_GPU_CODE_ inline void drawPixelGrey(DEVICEPTR(Vector4u) & dest, const THREADPTR(float) & angle)
@@ -375,8 +400,10 @@ _CPU_AND_GPU_CODE_ inline void processPixelGrey(DEVICEPTR(Vector4u) &outRenderin
 
 	computeNormalAndAngle<TVoxel, TIndex>(foundPoint, point, voxelData, voxelIndex, lightSource, outNormal, angle);
 
-	if (foundPoint) drawPixelGrey(outRendering, angle);
-	else outRendering = Vector4u((uchar)0);
+    if (foundPoint)
+        drawPixelGrey(outRendering, angle);
+    else
+        outRendering = Vector4u((uchar)0);
 }
 
 template<class TVoxel, class TIndex>
