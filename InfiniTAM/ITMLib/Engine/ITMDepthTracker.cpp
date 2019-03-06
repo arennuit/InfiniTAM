@@ -262,7 +262,9 @@ void ITMDepthTracker::doTrackCamera( ITMTrackingState *trackingState, const ITMV
     this->PrepareForEvaluation();
 
     // PreTrack.
-    Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
+    trackingState->pose_d_init = trackingState->pose_d;
+
+    Matrix4f approxInvPose = trackingState->pose_d_init->GetInvM();
     Matrix4f mat_km1_0 = approxInvPose;
 //    PreTrackCamera( trackingState, view, approxInvPose );
 
@@ -270,10 +272,8 @@ void ITMDepthTracker::doTrackCamera( ITMTrackingState *trackingState, const ITMV
 //    trackingState->pose_d->Coerce(); // Orthonormalization.
 //    approxInvPose = trackingState->pose_d->GetInvM();
 
-//    // Loop on levels.
-//    Matrix4f approxInvPose_beforeICP = approxInvPose;
 
-
+    // Loop on levels.
     float f_new;
     float hessian_raw[6 * 6];
     float hessian_norm[6 * 6];

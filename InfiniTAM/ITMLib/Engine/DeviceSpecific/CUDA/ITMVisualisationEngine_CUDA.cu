@@ -66,6 +66,20 @@ template<class TVoxel, class TIndex>
 __global__ void renderColour_device(Vector4u *outRendering, const Vector4f *ptsRay, const TVoxel *voxelData,
 	const typename TIndex::IndexData *voxelIndex, Vector2i imgSize, Vector3f lightSource);
 
+__global__ void computeView3dPointsIntoDisplay_device( float    const * depth,
+                                                       Vector2i         viewImgSize,
+                                                       Vector4f         viewIntrinsics,
+                                                       Matrix4f         h_view_display,
+                                                       Vector4f       * view3dPoints_inDisplay );
+
+__global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
+                                      Vector2i     viewImgSize,
+                                      Vector4u     color,
+                                      Vector3f     lightSource,
+                                      Vector4f     displayIntrinsics,
+                                      Vector2i     displayImgSize,
+                                      Vector4u    *displayImg );
+
 // class implementation
 
 template<class TVoxel, class TIndex>
@@ -88,7 +102,7 @@ ITMVisualisationEngine_CUDA<TVoxel, ITMVoxelBlockHash>::ITMVisualisationEngine_C
 	ITMSafeCall(cudaMalloc((void**)&renderingBlockList_device, sizeof(RenderingBlock) * MAX_RENDERING_BLOCKS));
 	ITMSafeCall(cudaMalloc((void**)&noTotalBlocks_device, sizeof(uint)));
 	ITMSafeCall(cudaMalloc((void**)&noTotalPoints_device, sizeof(uint)));
-	ITMSafeCall(cudaMalloc((void**)&noVisibleEntries_device, sizeof(uint)));
+    ITMSafeCall(cudaMalloc((void**)&noVisibleEntries_device, sizeof(uint)));
 }
 
 template<class TVoxel>
@@ -385,6 +399,42 @@ void ITMVisualisationEngine_CUDA<TVoxel, ITMVoxelBlockHash>::RenderImage(const I
 	const ITMRenderState *renderState, ITMUChar4Image *outputImage, IITMVisualisationEngine::RenderImageType type) const
 {
 	RenderImage_common(this->scene, pose, intrinsics, renderState, outputImage, type);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+template<class TVoxel>
+void ITMVisualisationEngine_CUDA<TVoxel, ITMVoxelBlockHash>::RenderOverlay( const ITMFloatImage  *depth,
+                                                                            const ITMPose        *displayPose,
+                                                                            const ITMPose        *viewPose,
+                                                                            const ITMIntrinsics  *displayIntrinsics,
+                                                                            const ITMIntrinsics  *viewIntrinsics,
+                                                                                  Vector4u        color,
+                                                                            const ITMRenderState *renderState_display ) const
+{
+    Vector2i imgSize = depth->noDims;
+
+    dim3 cudaBlockSize(8, 8);
+    dim3 gridSize( (int)ceil( (float)imgSize.x / (float)cudaBlockSize.x ), (int)ceil( (float)imgSize.y / (float)cudaBlockSize.y ) );
+
+    Matrix4f h_view_display = displayPose->GetM() * viewPose->GetInvM();
+
+    static ORUtils::Image<Vector4f> view3dPoints_inDisplay( imgSize, false, true );
+    computeView3dPointsIntoDisplay_device<<<gridSize, cudaBlockSize>>>( depth->GetData(MEMORYDEVICE_CUDA),
+                                                                        depth->noDims,
+                                                                        viewIntrinsics->projectionParamsSimple.all,
+                                                                        h_view_display,
+                                                                        view3dPoints_inDisplay.GetData(MEMORYDEVICE_CUDA) );
+
+    Matrix4f invM = displayPose->GetInvM();
+    Vector3f lightSource = -Vector3f( invM.getColumn(2) );
+
+    renderOverlay_device<<<gridSize, cudaBlockSize>>>( view3dPoints_inDisplay.GetData(MEMORYDEVICE_CUDA),
+                                                       view3dPoints_inDisplay.noDims,
+                                                       color,
+                                                       lightSource,
+                                                       displayIntrinsics->projectionParamsSimple.all,
+                                                       renderState_display->raycastImage->noDims,
+                                                       renderState_display->raycastImage->GetData(MEMORYDEVICE_CUDA) );
 }
 
 template<class TVoxel, class TIndex>
@@ -716,6 +766,110 @@ __global__ void renderColour_device(Vector4u *outRendering, const Vector4f *ptsR
 	Vector4f ptRay = ptsRay[locId];
 
 	processPixelColour<TVoxel, TIndex>(outRendering[locId], ptRay.toVector3(), ptRay.w > 0, voxelData, voxelIndex, lightSource);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+__global__ void computeView3dPointsIntoDisplay_device( float    const * depth,
+                                                       Vector2i         viewImgSize,
+                                                       Vector4f         viewIntrinsics,
+                                                       Matrix4f         h_view_display,
+                                                       Vector4f       * view3dPoints_inDisplay )
+{
+    // Coordinates of the view pixel (WARNING: this is not a display pixel).
+    int u_v = threadIdx.x + blockIdx.x * blockDim.x;
+    int v_v = threadIdx.y + blockIdx.y * blockDim.y;
+
+    int locId_local = threadIdx.x + threadIdx.y * blockDim.x;
+    int locId       = u_v + v_v * viewImgSize.x;
+
+    if ( u_v < 0 || u_v > viewImgSize.x - 1 || v_v < 0 || v_v > viewImgSize.y - 1)
+        return;
+
+    // Transform the view pixel into a view 3d point (expressed in the view frame).
+    float d = depth[ locId ];
+
+    float fx_v = viewIntrinsics.x;
+    float fy_v = viewIntrinsics.y;
+    float cx_v = viewIntrinsics.z;
+    float cy_v = viewIntrinsics.w;
+
+    Vector4f P_v;
+    P_v.x = d * ((float(u_v) - cx_v) / fx_v);
+    P_v.y = d * ((float(v_v) - cy_v) / fy_v);
+    P_v.z = d;
+    P_v.w = 1.0f;
+
+    // Express the 3d point in the display frame.
+    Vector4f & P_d = view3dPoints_inDisplay[ locId ];
+
+    P_d = h_view_display * P_v;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+__global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
+                                      Vector2i     viewImgSize,
+                                      Vector4u     color,
+                                      Vector3f     lightSource,
+                                      Vector4f     displayIntrinsics,
+                                      Vector2i     displayImgSize,
+                                      Vector4u    *displayImg )
+{
+    // Coordinates of the view pixel (WARNING: this is not a display pixel).
+    // NOTE: discard the edge pixels (as their normal is not defined).
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+
+    int locId_local = threadIdx.x + threadIdx.y * blockDim.x;
+    int locId       = x + y * viewImgSize.x;
+
+    if ( x <= 0 || x >= viewImgSize.x - 1 || y <= 0 || y >= viewImgSize.y - 1)
+        return;
+
+    // Project the 3d point into a pixel of the display image.
+    float fx_d = displayIntrinsics.x;
+    float fy_d = displayIntrinsics.y;
+    float cx_d = displayIntrinsics.z;
+    float cy_d = displayIntrinsics.w;
+
+    Vector4f const & P_d = view3dPoints_inDisplay[ locId ];
+
+    int u_d = fx_d * P_d.x / P_d.z + cx_d;
+    int v_d = fy_d * P_d.y / P_d.z + cy_d;
+
+    // Discard pixels out of the display image boundaries.
+    if ( u_d < 0 || u_d >= displayImgSize.x || v_d < 0 || v_d >= displayImgSize.y )
+        return;
+
+    // Compute the normal.
+    Vector4f const & xp1_y = view3dPoints_inDisplay[ (x + 1) +  y      * viewImgSize.x ];
+    Vector4f const & x_yp1 = view3dPoints_inDisplay[  x      + (y + 1) * viewImgSize.x ];
+    Vector4f const & xm1_y = view3dPoints_inDisplay[ (x - 1) +  y      * viewImgSize.x ];
+    Vector4f const & x_ym1 = view3dPoints_inDisplay[  x      + (y - 1) * viewImgSize.x ];
+
+    Vector4f diff_x( 0.0f, 0.0f, 0.0f, 0.0f );
+    Vector4f diff_y( 0.0f, 0.0f, 0.0f, 0.0f );
+
+    diff_x = xp1_y - xm1_y;
+    diff_y = x_yp1 - x_ym1;
+
+    Vector3f normal;
+    normal.x = -(diff_x.y * diff_y.z - diff_x.z * diff_y.y);
+    normal.y = -(diff_x.z * diff_y.x - diff_x.x * diff_y.z);
+    normal.z = -(diff_x.x * diff_y.y - diff_x.y * diff_y.x);
+
+    float normScale = 1.0f / sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+    normal *= normScale;
+
+    // Compute the normal / light angle.
+    float angle = normal.x * lightSource.x + normal.y * lightSource.y + normal.z * lightSource.z;
+
+    if ( angle <= 0.0f )
+        return;
+
+    // Update the display image.
+    int locId_display = u_d + v_d * displayImgSize.x;
+
+    displayImg[ locId_display ] = color;
 }
 
 template class ITMLib::Engine::ITMVisualisationEngine_CUDA < ITMVoxel, ITMVoxelIndex > ;

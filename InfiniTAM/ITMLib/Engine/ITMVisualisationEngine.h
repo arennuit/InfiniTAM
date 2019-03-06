@@ -50,6 +50,15 @@ namespace ITMLib
 			virtual void RenderImage(const ITMPose *pose, const ITMIntrinsics *intrinsics,
 				const ITMRenderState *renderState, ITMUChar4Image *outputImage, RenderImageType type = RENDER_SHADED_GREYSCALE) const = 0;
 
+            /** This will render overlays on the model raycast. */
+            virtual void RenderOverlay( const ITMFloatImage  *depth,
+                                        const ITMPose        *displayPose,
+                                        const ITMPose        *viewPose,
+                                        const ITMIntrinsics  *displayIntrinsics,
+                                        const ITMIntrinsics  *viewIntrinsics,
+                                              Vector4u        color,
+                                        const ITMRenderState *renderState_display ) const = 0;
+
 			/** Finds the scene surface using raycasting. */
 			virtual void FindSurface(const ITMPose *pose, const ITMIntrinsics *intrinsics,
 				const ITMRenderState *renderState) const = 0;

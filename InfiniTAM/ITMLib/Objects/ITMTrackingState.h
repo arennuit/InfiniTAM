@@ -36,6 +36,9 @@ namespace ITMLib
 			/// Current pose of the depth camera.
 			ITMPose *pose_d;
 
+            /// Initial guess pose of the depth camera.
+            ITMPose *pose_d_init;
+
             /// Frame index.
             uint m_frameIdx;
 
