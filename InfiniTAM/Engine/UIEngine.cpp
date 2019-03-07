@@ -106,11 +106,11 @@ void UIEngine::glutDisplayFunction()
 	glRasterPos2f(-0.95f, -0.95f);
 	if (uiEngine->freeviewActive)
 	{
-		sprintf(str, "n - next frame \t b - all frames \t e/esc - exit \t f - follow camera \t c - colours (currently %s) \t t - turn fusion %s", uiEngine->colourModes[uiEngine->currentColourMode].name, uiEngine->intergrationActive ? "off" : "on");
+        sprintf(str, "n - next frame \t b - all frames \t e/esc - exit \t f - follow camera \t c - colours (currently %s) \t t - fusion: %s", uiEngine->colourModes[uiEngine->currentColourMode].name, uiEngine->intergrationActive ? "on" : "off");
 	}
 	else
 	{
-		sprintf(str, "n - next frame \t b - all frames \t e/esc - exit \t f - free viewpoint \t t - turn fusion %s", uiEngine->intergrationActive ? "off" : "on");
+        sprintf(str, "n - next frame \t b - all frames \t e/esc - exit \t f - free viewpoint \t t - fusion: %s", uiEngine->intergrationActive ? "on" : "off");
 	}
 	safe_glutBitmapString(GLUT_BITMAP_HELVETICA_12, (const char*)str);
 
@@ -230,8 +230,11 @@ void UIEngine::glutKeyUpFunction(unsigned char key, int x, int y)
 		break;
 	case 't':
 		uiEngine->intergrationActive = !uiEngine->intergrationActive;
-		if (uiEngine->intergrationActive) uiEngine->mainEngine->turnOnIntegration();
-		else uiEngine->mainEngine->turnOffIntegration();
+
+        if (uiEngine->intergrationActive)
+            uiEngine->mainEngine->turnOnIntegration();
+        else
+            uiEngine->mainEngine->turnOffIntegration();
 		break;
 	case 'w':
 		printf("saving mesh to disk ...");
