@@ -840,6 +840,7 @@ __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
         return;
 
     // Compute the normal.
+    // NOTE: the vicinity on a +-3 window to smooth the (noisy) view.
     Vector4f const & xp1_y = view3dPoints_inDisplay[ (x + 3) +  y      * viewImgSize.x ];
     Vector4f const & x_yp1 = view3dPoints_inDisplay[  x      + (y + 3) * viewImgSize.x ];
     Vector4f const & xm1_y = view3dPoints_inDisplay[ (x - 3) +  y      * viewImgSize.x ];
@@ -868,8 +869,8 @@ __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
     // Update the display image.
     int locId_display = u_d + v_d * displayImgSize.x;
 
-    float outRes = ( 0.8f * cosAngle + 0.2f ) * 255.0f; // Ambient + diffuse light.
-    displayImg[ locId_display ] = Vector4u( outRes, 50, 50, 50 );
+    float outRes = ( 0.9f * cosAngle + 0.1f ) * 255.0f; // Ambient + diffuse light.
+    displayImg[ locId_display ] = Vector4u( outRes, 50, 50, 255 );
 }
 
 template class ITMLib::Engine::ITMVisualisationEngine_CUDA < ITMVoxel, ITMVoxelIndex > ;
