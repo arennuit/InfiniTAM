@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "ITMDepthCorrection.h"
 #include "ITMIntrinsics.h"
 #include "ITMExtrinsics.h"
 #include "ITMDisparityCalib.h"
@@ -42,6 +43,7 @@ namespace ITMLib
             */
             ITMExtrinsics m_h_cam_beacon;
 
+			DepthCorrectionModel depth_correction;
 		};
 	}
 }

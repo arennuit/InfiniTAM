@@ -129,6 +129,7 @@ Objects/ITMMesh.cpp
 )
 
 set(ITMLIB_OBJECTS_HEADERS
+Objects/ITMDepthCorrection.h
 Objects/ITMDisparityCalib.h
 Objects/ITMExtrinsics.h
 Objects/ITMGlobalCache.h
@@ -163,6 +164,7 @@ Utils/ITMLibSettings.cpp
 
 set(ITMLIB_UTILS_HEADERS
 Utils/ITMCalibIO.h
+Utils/ITMDepthCorrectionIO.h
 Utils/ITMLibDefines.h
 Utils/ITMLibSettings.h
 Utils/ITMMath.h
@@ -227,7 +229,7 @@ if(WITH_CUDA)
 	${ITMLIB_CPU_OBJECTS}
 	${ITMLIB_CUDA_OBJECTS}
 	${ITMLIB_COMMON_OBJECTS}
-	OPTIONS "${CUDA_ARCH_OPTIONS} --use_fast_math")
+	OPTIONS "${CUDA_ARCH_OPTIONS} --use_fast_math --expt-relaxed-constexpr")
   target_link_libraries(ITMLib ${CUDA_LIBRARY})
 else()
   add_definitions(-DCOMPILE_WITHOUT_CUDA)

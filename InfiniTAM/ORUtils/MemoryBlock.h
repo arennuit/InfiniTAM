@@ -262,9 +262,60 @@ namespace ORUtils
 			}
 		}
 
-		// Suppress the default copy constructor and assignment operator
-		MemoryBlock(const MemoryBlock&);
-		MemoryBlock& operator=(const MemoryBlock&);
+        MemoryBlock(const MemoryBlock& other):
+            isAllocated_CPU (false),
+            isAllocated_CUDA (false),
+            isMetalCompatible (false)
+        {
+            *this = other;
+        }
+
+        MemoryBlock& operator=(const MemoryBlock& other)
+        {
+            Free();
+
+            this->isAllocated_CPU = false;
+            this->isAllocated_CUDA = false;
+            this->isMetalCompatible = false;
+
+            Allocate(other.dataSize, other.isAllocated_CPU, other.isAllocated_CUDA, other.isMetalCompatible);
+
+            if (isAllocated_CPU)
+                SetFrom(&other, CPU_TO_CPU);
+            if (isAllocated_CUDA)
+                SetFrom(&other, CUDA_TO_CUDA);
+
+			return *this;
+        }
+
+        MemoryBlock(MemoryBlock&& other) noexcept:
+            isAllocated_CPU (other.isAllocated_CPU),
+            isAllocated_CUDA (other.isAllocated_CUDA),
+            isMetalCompatible (other.isMetalCompatible),
+            data_cpu (other.data_cpu),
+            data_cuda (other.data_cuda),
+            dataSize (other.dataSize)
+        {
+            other.isAllocated_CPU = false;
+            other.isAllocated_CUDA = false;
+            other.isMetalCompatible = false;
+            other.data_cpu = nullptr;
+            other.data_cuda = nullptr;
+            other.dataSize = 0;
+        }
+
+        MemoryBlock& operator=(MemoryBlock &&other) noexcept
+        {
+			std::swap(isAllocated_CPU, other.isAllocated_CPU);
+			std::swap(isAllocated_CUDA, other.isAllocated_CUDA);
+			std::swap(isMetalCompatible, other.isMetalCompatible);
+			std::swap(data_cpu, other.data_cpu);
+			std::swap(data_cuda, other.data_cuda);
+			std::swap(dataSize, other.dataSize);
+
+			return *this;
+        }
+
 #endif
 	};
 } 

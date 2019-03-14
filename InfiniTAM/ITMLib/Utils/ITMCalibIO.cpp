@@ -1,9 +1,11 @@
 // Copyright 2014-2015 Isis Innovation Limited and the authors of InfiniTAM
 
 #include "ITMCalibIO.h"
+#include "ITMDepthCorrectionIO.h"
 
 #include <fstream>
 #include <sstream>
+#include <typeinfo>
 
 using namespace ITMLib::Objects;
 
@@ -128,6 +130,7 @@ bool ITMLib::Objects::readRGBDCalib(std::istream & src, ITMRGBDCalib & dest)
     if (!ITMLib::Objects::readExtrinsics(src, dest.trafo_rgb_to_depth)) return false;
     if (!ITMLib::Objects::readDisparityCalib(src, dest.disparityCalib)) return false;
     if (!ITMLib::Objects::readExtrinsics(src, dest.m_h_cam_beacon)) return false;
+    if (!ITMLib::Objects::readDepthCorrection(src, dest.depth_correction)) return false;
 	return true;
 }
 
@@ -137,7 +140,59 @@ bool ITMLib::Objects::readRGBDCalib(const char *fileName, ITMRGBDCalib & dest)
 	return ITMLib::Objects::readRGBDCalib(f, dest);
 }
 
-bool ITMLib::Objects::readRGBDCalib(const char *rgbIntrinsicsFile, const char *depthIntrinsicsFile, const char *disparityCalibFile, const char *extrinsicsFile, const char *camInTrackerFile, ITMRGBDCalib & dest)
+template <typename CorrectionModel>
+bool readCorrectionModel(std::istream & src, Size2 imageSize, CorrectionModel &dest)
+{
+    try {
+        dest = CorrectionModelDeserializer<CorrectionModel>::deserialize(src, imageSize);
+    } catch (std::exception &e) {
+        std::clog << "Could not parse " << typeid(CorrectionModel).name() << ": " << e.what() << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool ITMLib::Objects::readDepthCorrection(std::istream & src, DepthCorrectionModel &dest)
+{
+	Size2 imageSize;
+
+	if (!(src >> imageSize.x() >> imageSize.y())) {
+		std::clog << "Could not read image size for depth correction" << std::endl;
+		return false;
+	}
+
+	DepthCorrectionModel::GlobalModel globalModel;
+    DepthCorrectionModel::LocalModel localModel;
+
+    if (!readCorrectionModel<DepthCorrectionModel::GlobalModel>(src, imageSize, globalModel)
+            || !readCorrectionModel<DepthCorrectionModel::LocalModel>(src, imageSize, localModel))
+        return false;
+
+    dest.setGlobalModel(std::move(globalModel));
+    dest.setLocalModel(std::move(localModel));
+
+	std::cout << "Objects::readDepthCorrection():\n"
+              << "  dimensions: " << imageSize.x() << 'x' << imageSize.y() << '\n'
+			  << "  global model:\n"
+			  << "    " << dest.globalModel().polynomial(0, 0) << '\n'
+			  << "    " << dest.globalModel().polynomial(1, 0) << '\n'
+			  << "    " << dest.globalModel().polynomial(0, 1) << '\n'
+			  << "    " << dest.globalModel().polynomial(1, 1) << '\n'
+			  << "  local model: bin size is " << localModel.binSize().x() << ' ' << localModel.binSize().y() << '\n'
+			  << std::flush;
+
+	return true;
+}
+
+bool ITMLib::Objects::readDepthCorrection(const char *fileName, DepthCorrectionModel &dest)
+{
+	std::ifstream f(fileName);
+
+	return readDepthCorrection(f, dest);
+}
+
+bool ITMLib::Objects::readRGBDCalib(const char *rgbIntrinsicsFile, const char *depthIntrinsicsFile, const char *disparityCalibFile, const char *extrinsicsFile, const char *camInTrackerFile, const char *depthCorrectionFile, ITMRGBDCalib & dest)
 {
     // Display.
     std::cout << "------------------------------------------------------------------------" << std::endl;
@@ -148,6 +203,7 @@ bool ITMLib::Objects::readRGBDCalib(const char *rgbIntrinsicsFile, const char *d
 	ret &= ITMLib::Objects::readExtrinsics(extrinsicsFile, dest.trafo_rgb_to_depth);
 	ret &= ITMLib::Objects::readDisparityCalib(disparityCalibFile, dest.disparityCalib);
     ret &= ITMLib::Objects::readExtrinsics(camInTrackerFile, dest.m_h_cam_beacon);
+    ret &= ITMLib::Objects::readDepthCorrection(depthCorrectionFile, dest.depth_correction);
 	return ret;
 }
 

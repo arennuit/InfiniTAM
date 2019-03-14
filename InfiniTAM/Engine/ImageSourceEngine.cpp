@@ -58,6 +58,11 @@ void ImageFileReader::loadIntoCache(void)
 		delete cached_depth; cached_depth = NULL;
 		printf("error reading file '%s'\n", str);
 	}
+	else
+	{
+		// Update calib image size
+		calib.depth_correction.resize({cached_depth->noDims.width, cached_depth->noDims.height});
+	}
 }
 
 bool ImageFileReader::hasMoreImages(void)
@@ -114,6 +119,7 @@ CalibSource::CalibSource(const char *calibFilename, Vector2i setImageSize, float
 	this->imgSize = setImageSize;
 	this->ResizeIntrinsics(calib.intrinsics_d, ratio);
 	this->ResizeIntrinsics(calib.intrinsics_rgb, ratio);
+	this->calib.depth_correction.resize({imgSize.width, imgSize.height});
 }
 
 void CalibSource::ResizeIntrinsics(ITMIntrinsics &intrinsics, float ratio)
@@ -131,6 +137,7 @@ RawFileReader::RawFileReader(const char *calibFilename, const char *rgbImageMask
 	this->imgSize = setImageSize;
 	this->ResizeIntrinsics(calib.intrinsics_d, ratio);
 	this->ResizeIntrinsics(calib.intrinsics_rgb, ratio);
+	this->calib.depth_correction.resize({imgSize.width, imgSize.height});
 	
 	strncpy(this->rgbImageMask, rgbImageMask, BUF_SIZE);
 	strncpy(this->depthImageMask, depthImageMask, BUF_SIZE);

@@ -205,6 +205,8 @@ OpenNIEngine::OpenNIEngine(const char *calibFilename, const char *deviceURI, con
 				imageSize_rgb.x, imageSize_rgb.y);
 		}
 	}
+	// depth_correction MUST be at the same dimensions as the depth stream.
+	this->calib.depth_correction.resize({imageSize_d.width, imageSize_d.height});
 }
 
 OpenNIEngine::~OpenNIEngine()
