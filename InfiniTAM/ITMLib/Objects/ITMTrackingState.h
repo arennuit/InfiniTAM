@@ -68,6 +68,9 @@ namespace ITMLib
 			{
 				this->pointCloud = new ITMPointCloud(imgSize, memoryType);
 
+                this->pose_d_init = new ITMPose();
+                this->pose_d_init->SetFrom(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+
 				this->pose_d = new ITMPose();
 				this->pose_d->SetFrom(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 

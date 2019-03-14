@@ -869,8 +869,9 @@ __global__ void renderOverlay_device( Vector4f    *view3dPoints_inDisplay,
     // Update the display image.
     int locId_display = u_d + v_d * displayImgSize.x;
 
-    float outRes = ( 0.9f * cosAngle + 0.1f ) * 255.0f; // Ambient + diffuse light.
-    displayImg[ locId_display ] = Vector4u( outRes, 50, 50, 255 );
+    float coeff = ( 0.6f * cosAngle + 0.4f );
+    Vector4u outRes = Vector4u( coeff * color.x, coeff * color.y, coeff * color.z, coeff * color.w ); // Ambient + diffuse light.
+    displayImg[ locId_display ] = outRes;
 }
 
 template class ITMLib::Engine::ITMVisualisationEngine_CUDA < ITMVoxel, ITMVoxelIndex > ;

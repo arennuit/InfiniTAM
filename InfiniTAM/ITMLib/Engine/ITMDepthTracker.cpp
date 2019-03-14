@@ -262,9 +262,9 @@ void ITMDepthTracker::doTrackCamera( ITMTrackingState *trackingState, const ITMV
     this->PrepareForEvaluation();
 
     // PreTrack.
-    trackingState->pose_d_init = trackingState->pose_d;
+    trackingState->pose_d_init->SetFrom( trackingState->pose_d );
 
-    Matrix4f approxInvPose = trackingState->pose_d_init->GetInvM();
+    Matrix4f approxInvPose = trackingState->pose_d->GetInvM();
     Matrix4f mat_km1_0 = approxInvPose;
 //    PreTrackCamera( trackingState, view, approxInvPose );
 

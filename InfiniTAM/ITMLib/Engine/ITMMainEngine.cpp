@@ -221,6 +221,14 @@ void ITMMainEngine::GetImage(ITMUChar4Image *out, GetImageType getImageType, ITM
                                             &view->calib->intrinsics_d,
                                             Vector4u( 255, 0, 0, 255 ),
                                             renderState_freeview );
+        visualisationEngine->RenderOverlay( view->depth,
+                                            pose,
+                                            trackingState->pose_d,
+                                            intrinsics,
+                                            &view->calib->intrinsics_d,
+                                            Vector4u( 0, 255, 0, 255 ),
+                                            renderState_freeview );
+
 
 		if (settings->deviceType == ITMLibSettings::DEVICE_CUDA)
 			out->SetFrom(renderState_freeview->raycastImage, ORUtils::MemoryBlock<Vector4u>::CUDA_TO_CPU);
