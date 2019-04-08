@@ -222,12 +222,12 @@ if(WITH_CUDA)
   foreach(a ${CUDA_ARCH_LIST})
     set(CUDA_ARCH_OPTIONS "${CUDA_ARCH_OPTIONS} -gencode arch=compute_${a},code=compute_${a}")
   endforeach()
-  include_directories(${CUDA_INCLUDE_DIRS})
   cuda_add_library(ITMLib
 	${ITMLIB_CPU_OBJECTS}
 	${ITMLIB_CUDA_OBJECTS}
 	${ITMLIB_COMMON_OBJECTS}
 	OPTIONS "${CUDA_ARCH_OPTIONS} --use_fast_math")
+  target_include_directories(ITMLib SYSTEM PUBLIC ${CUDA_INCLUDE_DIRS})
   target_link_libraries(ITMLib ${CUDA_LIBRARY})
 else()
   add_library(ITMLib ${ITMLIB_CPU_OBJECTS} ${ITMLIB_COMMON_OBJECTS})
